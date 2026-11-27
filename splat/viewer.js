@@ -111,7 +111,11 @@ function resize() {
     camera.updateProjectionMatrix();
     camera.projectionMatrix.elements[0] *= c.fx / c.fy; // non-square pixels from COLMAP
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
-    poster.style.width = (h * c.w / c.h) + 'px';
+    const band = h * c.w / c.h;
+    poster.style.width = band + 'px';
+    // side panels start a little inside the frame edge and feather outwards
+    const side = Math.max(0, (w - band * 1.12) / 2 + 60);
+    document.querySelectorAll('.side').forEach(el => { el.style.width = side + 'px'; });
   } else camera.updateProjectionMatrix();
   st.dirty = true;
 }
