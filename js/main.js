@@ -43,7 +43,7 @@ async function start() {
     street: { pos: [23.6, 3.6, -38], tgt: [22.7, 4.3, 10], fov: 56 },   // registered to listing photo zillow-01 (iPhone 1x, at the open gate)
     hero: { pos: [58, 62, -118], tgt: [26, 5, 18], fov: 36 },
     aerial: { pos: [30, 230, -60], tgt: [30, 0, 30], fov: 38 },
-    garden: { pos: [10, 6, 112], tgt: [30, 10, 30], fov: 50 },
+    garden: { pos: [24, 3.6, 62], tgt: [6, 11, 112], fov: 60 },   // from the pergola across the lawn to the terraces (zillow-02)
   };
   const shot = SHOTS[params.get('shot')] || SHOTS.hero;
   camera.position.set(...shot.pos); orbit.target.set(...shot.tgt); camera.fov = shot.fov; camera.updateProjectionMatrix();
@@ -93,7 +93,7 @@ async function start() {
     const u = (bi % width) / width; skySunAz = (u - 0.5) * Math.PI * 2 * -1 + Math.PI / 2;
   }
   scene.background = skyTex; scene.environment = skyTex;
-  scene.backgroundIntensity = 1.0;
+  scene.backgroundIntensity = 1.3;
   scene.fog = new THREE.FogExp2('#B7C8D6', 0.0009);
   setTime(params.get('time') || 'afternoon');
 

@@ -47,16 +47,23 @@ export function buildSite(B) {
   // back terraces (three brick levels) and curved brick paths
   for (let k = 0; k < 3; k++) strip(k === 2 ? 'grass' : 'brick', -10, 98 + k * 2.6, 44, 118, 0.05, 0.6 * (k + 1));
   for (let k = 0; k < 3; k++) strip('brick', -10 + 0, 98 + k * 2.6 - 0.05, 44, 98 + k * 2.6 + 0.35, 0.6 * (k + 1) - 0.08, 0.6 * (k + 1) + 0.02);
-  const path = (p, w) => {
+  const path = (p, w, ivy = 0) => {
     const pt = t => [0, 1].map(i => (1 - t) ** 3 * p[0][i] + 3 * (1 - t) ** 2 * t * p[1][i] + 3 * (1 - t) * t * t * p[2][i] + t ** 3 * p[3][i]);
     for (let t = 0; t < 1; t += 0.01) {
       const a = pt(t), b = pt(t + 0.01);
-      B.obox(G, 'brick', (a[0] + b[0]) / 2, GY + 0.04, (a[1] + b[1]) / 2, w, 0.1, Math.hypot(b[0] - a[0], b[1] - a[1]) + 0.08, Math.atan2(b[0] - a[0], b[1] - a[1]));
+      const ang = Math.atan2(b[0] - a[0], b[1] - a[1]), mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, len = Math.hypot(b[0] - a[0], b[1] - a[1]) + 0.08;
+      B.obox(G, 'brick', mx, GY + 0.04, mz, w, 0.1, len, ang);
+      // ivy bed along the outer side of the path, as in the back garden photo
+      if (ivy) B.obox(G, 'groundcover', mx + Math.cos(ang) * ivy * (w / 2 + 2.6), GY + 0.03, mz - Math.sin(ang) * ivy * (w / 2 + 2.6), 5, 0.06, len, ang);
     }
   };
-  path([[54, 52], [54, 72], [30, 74], [30, 98]], 3.2); path([[9, 62], [4, 76], [24, 84], [20, 98]], 2.6);
+  path([[54, 52], [54, 72], [30, 74], [30, 98]], 3.2, -1); path([[9, 62], [4, 76], [24, 84], [20, 98]], 2.6, 1);
+  strip('groundcover', -10, 91, 44, 98, 0, 0.06);   // ivy bank at the foot of the terraces
   // brick patio under the pergola
   strip('brick', 0, 48.6, 18.4, 62, 0, 0.1);
+  // board fence on the back lot line, weathered redwood
+  B.box(G, 'pergola', -40, 131.8, 80, 132.1, GY, GY + 6.5);
+  for (let x = -40; x < 80; x += 8) B.box(G, 'pergola', x - 0.2, 131.5, x + 0.2, 131.8, GY, GY + 6.7);
   // pergola behind the kitchen
   [0.6, 9.2, 17.8].forEach(x => [49.4, 55.5, 61.6].forEach(z => B.box(G, 'pergola', x - 0.3, z - 0.3, x + 0.3, z + 0.3, GY, 8.6)));
   [0.6, 9.2, 17.8].forEach(x => B.box(G, 'pergola', x - 0.22, 48.4, x + 0.22, 62.6, 8.6, 9.5));
@@ -109,7 +116,7 @@ const TREES = [
   ['maple_red', 40, -16, 19], ['maple_red', 50, -9, 16], ['maple_red', 33.5, -6.5, 15],
   ['maple_gold', 18.6, -8.5, 29],
   ['oak_m', -24, -40, 34], ['oak_m', 112, -40, 38],
-  ['cedar', -110, 160, 64], ['redwood_a', 150, 120, 104], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
+  ['cedar', -110, 160, 64], ['redwood_a', 150, 120, 104], ['oak_m', 50, 138, 46], ['oak', 72, 126, 54], ['redwood_b', 92, 140, 96], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
 ];
 const BUSHES = [];
 (() => {
@@ -166,12 +173,25 @@ export async function loadTrees(group, onProgress) {
         const base = autumn ? vec3(lum).mul(2.1).mul(color(tint)) : tx.rgb.mul(color(tint));
         mat.colorNode = base.mul(v);
         mat.opacityNode = tx.a;
-        mat.emissiveNode = base.mul(0.03);
+        mat.emissiveNode = base.mul(0.06);   // light scattered through the leaves
       } else {
         const t = src.name.includes('pine') ? bark.pine : bark.oak;
         mat = new THREE.MeshStandardNodeMaterial({ map: t[0], normalMap: t[1], color: src.color, roughness: 0.95, metalness: 0 });
       }
-      const im = new THREE.InstancedMesh(o.geometry, mat, list.length);
+      let geo = o.geometry;
+      if (isLeaf) {
+        geo = geo.clone(); geo.computeBoundingBox();
+        const c = new THREE.Vector3(); geo.boundingBox.getCenter(c); const sz = new THREE.Vector3(); geo.boundingBox.getSize(sz);
+        c.y -= sz.y * 0.15;
+        const P = geo.attributes.position, Nn = geo.attributes.normal, v = new THREE.Vector3(), nn = new THREE.Vector3();
+        for (let i = 0; i < P.count; i++) {
+          v.fromBufferAttribute(P, i).sub(c).divide(sz).normalize();
+          nn.fromBufferAttribute(Nn, i); if (nn.dot(v) < 0) nn.negate();
+          nn.lerp(v, 0.75).normalize(); Nn.setXYZ(i, nn.x, nn.y, nn.z);
+        }
+        Nn.needsUpdate = true;
+      }
+      const im = new THREE.InstancedMesh(geo, mat, list.length);
       const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
       list.forEach((t, i) => {
         const k = t.h / H;
@@ -269,6 +289,11 @@ const winTrim = new THREE.BoxGeometry(3.6, 4.8, 0.24);
 // ---------- lawn blades and fallen leaves ----------
 // Instanced clumps of grass blades over the front lawn; they fade out (shrink into the turf texture)
 // a long way from the house so only the near lawn pays for them.
+// back lawn: a curved bowl between the brick paths, ivy beds around it
+const bez = (p, t) => [0, 1].map(i => (1 - t) ** 3 * p[0][i] + 3 * (1 - t) ** 2 * t * p[1][i] + 3 * (1 - t) * t * t * p[2][i] + t ** 3 * p[3][i]);
+const PATH_A = [[54, 52], [54, 72], [30, 74], [30, 98]], PATH_B = [[9, 62], [4, 76], [24, 84], [20, 98]];
+const nearPath = (p, x, z, w) => { for (let t = 0; t <= 1; t += 0.02) { const q = bez(p, t); if (Math.hypot(q[0] - x, q[1] - z) < w) return true; } return false; };
+const lawnBack = (x, z) => { const dx = (x - 27) / 19, dz = (z - 82) / 12; return dx * dx + dz * dz < 1 && !nearPath(PATH_A, x, z, 2.1) && !nearPath(PATH_B, x, z, 1.9); };
 export function buildGrass(group) {
   let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   // one clump: 14 tapered blades (one triangle each), normals mostly up so they shade like the turf
@@ -297,14 +322,15 @@ export function buildGrass(group) {
   col = mix(col, dry, smoothstep(0.62, 0.9, macro).mul(uv().y).mul(0.55));
   mat.colorNode = col.mul(fine.mul(0.35).add(0.8));
   // areas: front lawn either side of the walk, and the parkway strip
-  const rects = [[-40.5, -32.9, 21.8, -8.6], [27.2, -32.9, 64, -7.6], [21.8, -32.9, 27.2, -30.5], [-40, -41.5, 64, -38.2]];
+  const rects = [[-40.5, -32.9, 21.8, -8.6], [27.2, -32.9, 64, -7.6], [21.8, -32.9, 27.2, -30.5], [-40, -41.5, 64, -38.2], [6, 66, 50, 96]];
   const walkX = z => 24.5 - 0.75 * Math.sin(Math.PI * 2 * (z + 33.5) / 30.4) * Math.min(1, (-3.1 - z) / 6);
   const pts = [];
   for (const [x0, z0, x1, z1] of rects) {
     const step = 0.36;
     for (let z = z0; z < z1; z += step) for (let x = x0; x < x1; x += step) {
       const px = x + (r() - 0.5) * step, pz = z + (r() - 0.5) * step;
-      if (z > -33.5 && Math.abs(px - walkX(pz)) < 2.15) continue;
+      if (z > -33.5 && z < -3 && Math.abs(px - walkX(pz)) < 2.15) continue;
+      if (z > 60 && !lawnBack(px, pz)) continue;
       pts.push(px, pz);
     }
   }

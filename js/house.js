@@ -356,16 +356,22 @@ export function buildHouse(B, floorDefs) {
   for (let x = 28.3; x < 36; x += 0.4) B.box(F1, 'sash', x - 0.04, 37.86, x + 0.04, 37.94, 10.25, 12.8);
   B.box('roof', 'siding', 27.75, 32, 28.05, 38.3, 10, roofTop(27.7, 32) - 0.3);
   B.box('roof', 'siding', 35.95, 32, 36.25, 38.3, 10, roofTop(36.3, 32) - 0.3);
-  // porch: brick steps, floor, posts and front door with glass side panels
+  // porch: brick steps, floor, slim white posts, recessed red door with one narrow glazed sidelight, dark handrail
   B.box(F0, 'porchBrick', 18.4, 0.2, 30.4, 8.6, -0.35, 0);
-  for (let k = 0; k < 3; k++) B.box(F0, 'brick', 19.6, -1.1 - k * 1.0, 28.6, 0.2, -0.35 - (k + 1) * 0.45, -0.35 - k * 0.45);
-  B.box(F0, 'brick', 19.6, -3.1, 28.6, 0.2, -1.75, -1.7);
-  [[19, 0.8], [29.8, 0.8]].forEach(([x, z]) => { B.box(F0, 'trim', x - 0.3, z - 0.3, x + 0.3, z + 0.3, 0, 8.7); B.box(F0, 'trim', x - 0.4, z - 0.4, x + 0.4, z + 0.4, 0, 0.5); });
+  for (let k = 0; k < 3; k++) B.box(F0, 'brick', 21.2, -1.1 - k * 1.0, 27.6, 0.2, -0.35 - (k + 1) * 0.45, -0.35 - k * 0.45);
+  B.box(F0, 'brick', 21.2, -3.1, 27.6, 0.2, -1.75, -1.7);
+  [[19, 0.8], [29.8, 0.8]].forEach(([x, z]) => { B.box(F0, 'sash', x - 0.2, z - 0.2, x + 0.2, z + 0.2, 0, 8.7); B.box(F0, 'sash', x - 0.28, z - 0.28, x + 0.28, z + 0.28, 0, 0.4); });
   B.box(F0, 'trim', 18.4, 0.4, 30.8, 1.0, 8.2, 8.75);
   B.box(F0, 'door', 21.3, 8.62, 24.7, 8.75, 0, 7);
-  B.box(F0, 'darkMetal', 24.2, 8.5, 24.35, 8.62, 3.2, 3.5);
-  for (const [a, b] of [[20.1, 21.15], [24.85, 25.9]]) { B.box(F0, 'sash', a, 8.55, b, 8.7, 0, 7); B.box(F0, 'glass', a + 0.15, 8.5, b - 0.15, 8.75, 0.6, 6.7); }
-  B.box(F0, 'trim', 19.8, 8.5, 26.2, 8.7, 7, 7.6);
+  for (const [y0, y1] of [[0.6, 3.1], [3.5, 6.4]]) { B.box(F0, 'door', 21.65, 8.56, 22.85, 8.62, y0, y1); B.box(F0, 'door', 23.15, 8.56, 24.35, 8.62, y0, y1); }
+  B.box(F0, 'metal', 21.55, 8.45, 21.7, 8.6, 3.1, 3.5);
+  B.box(F0, 'sash', 24.75, 8.55, 26.1, 8.7, 0, 7); B.box(F0, 'glass', 24.95, 8.5, 25.9, 8.75, 1.2, 6.7);
+  B.box(F0, 'sash', 20.1, 8.55, 21.25, 8.7, 0, 7);
+  B.box(F0, 'sash', 19.9, 8.5, 26.3, 8.7, 7, 7.5);
+  // handrail on the east side of the steps
+  { const L = Math.hypot(3.2, 1.75); B.obox(F0, 'darkMetal', 27.25, 1.6, -1.4, 0.08, 0.08, L, 0, Math.atan2(1.75, 3.2), 0);
+    for (const [z, y] of [[0.1, 0], [-2.9, -1.7]]) B.box(F0, 'darkMetal', 27.21, z - 0.04, 27.29, z + 0.04, y, y + 3.0);
+    B.box(F0, 'darkMetal', 27.21, 0.1, 27.29, 3.0, 2.96, 3.04); B.box(F0, 'darkMetal', 27.21, 2.96, 27.29, 3.04, 0, 3.0); }
   // shutters on the big front window of the den wing
   shutters(B, 'h', 0, -1, DEN_WIN[0], DEN_WIN[1], DEN_WIN[2], DEN_WIN[3]);
   // small dark attic window high in the den gable, dormer windows

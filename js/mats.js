@@ -98,8 +98,8 @@ function shingles() {
   const gran = mx_noise_float(p.mul(42)).mul(0.5).add(0.5);
   const gran2 = mx_noise_float(p.mul(11)).mul(0.5).add(0.5);
   const streak = mx_fractal_noise_float(vec3(u.mul(0.09), v.mul(0.05), 0), 3).mul(0.5).add(0.5);
-  let col = mix(color('#4A3D35'), color('#6A5A4F'), h1);
-  col = mix(col, color('#3A302B'), step(0.8, h2).mul(0.8));
+  let col = mix(color('#5E5047'), color('#857163'), h1);
+  col = mix(col, color('#4A3E37'), step(0.8, h2).mul(0.8));
   col = col.mul(float(0.74).add(gran.mul(0.34)).add(gran2.mul(0.1))).mul(mix(float(0.86), float(1.1), streak));
   // the butt edge of the course above throws a thin shadow line onto the top of this course
   const shadow = mix(float(0.5), float(1), smoothstep(0.0, 0.1, fv));
@@ -130,7 +130,9 @@ function paneling() {
 }
 
 function glass(dark) {
-  const m = new THREE.MeshPhysicalNodeMaterial({ color: dark ? '#141B1E' : '#24302F', roughness: 0.03, metalness: 0, transparent: !dark, opacity: dark ? 1 : 0.52, depthWrite: !!dark, ior: 1.52, specularIntensity: 1 });
+  // old float glass: dark body, strong Fresnel reflection of sky and trees, a faint ripple so reflections waver
+  const m = new THREE.MeshPhysicalNodeMaterial({ color: dark ? '#0E1416' : '#1A2426', roughness: 0.02, metalness: 0, transparent: !dark, opacity: dark ? 1 : 0.68, depthWrite: !!dark, ior: 1.52, specularIntensity: 1, envMapIntensity: 2.6 });
+  m.normalNode = transformNormalToView(normalWorld.add(vec3(mx_noise_float(positionWorld.mul(1.7)), 0, mx_noise_float(positionWorld.mul(1.7).add(5.2))).mul(0.025)).normalize());
   m.side = THREE.DoubleSide;
   return m;
 }
