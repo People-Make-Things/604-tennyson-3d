@@ -112,8 +112,8 @@ const TREES = [
   // [model, x, z, height ft, rotation, crown width scale]; front-yard trees placed by trunk base and crown outline
   // against listing photo zillow-01 from the registered street camera (see SHOTS.street in main.js)
   // back-garden redwoods sit in line behind the trees the photo shows, leaving its two patches of open sky above the roof
-  ['redwood', -30, 104, 112, 0, 1.5], ['redwood', -44, 122, 104, 0, 1.4], ['redwood', -36, 112, 118, 0, 1.5], ['redwood', 26, 126, 96, 0, 1.4],
-  ['redwood', 22, 68, 92, 0, 1.6],                // the tall sparse redwood above the roof, centre of the listing photo
+  ['redwood', -30, 104, 112, 0, 1.5], ['redwood', -44, 122, 104, 0, 1.4], ['redwood', -36, 112, 118, 0, 1.5],
+  ['redwood', 22, 124, 124, 0, 1.9],              // the tall redwood above the roof in the listing photo, behind the terraces
   ['deodar', 82, 72, 64, 0, 1.25], ['deodar', 96, 30, 56, 0, 1.2], // dense dark cedars behind the left (east) roof
   ['oak_live', -20, 14, 52], ['oak', -26, 66, 48], ['oak_m', 80, 96, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
   ['jmaple', 36, 4, 15, 0, 1.1], ['jmaple', 45, 10.5, 13], ['jmaple', 51, 11, 11, 0, 0.9],   // orange Japanese maples against the left facade
