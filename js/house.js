@@ -1,7 +1,7 @@
 // Builds the house: walls with real window and door assemblies, floors, fixtures, and a roof
 // computed as a height field from the roof planes read off the aerial photo.
 import * as THREE from 'three/webgpu';
-import { OUTLINE, FY, HFN, DORMERS, ROOMS, OPEN, C } from './data.js';
+import { OUTLINE, FY, HFN, DORMERS, ROOMS, OPEN, C, dormerFace, dormerTop, PITCH_E } from './data.js';
 
 export const T = 0.35;          // wall thickness (ft)
 export const WALL_TOP = 9;      // ground floor wall height
@@ -18,9 +18,10 @@ const onOutline = (kind, at, m) => {
 
 // ---------- roof planes ----------
 const PARTS = [
-  { rects: [[-1.2, 7.2, 42.4, 50.9], [42.4, 13.0, 62.6, 50.9]], ridge: 'x', at: 28, top: 23.95, s: 0.65, mat: 'shingles', main: true },
+  { rects: [[-1.2, 7.2, 42.4, 50.9], [42.4, 28, 62.6, 50.9]], ridge: 'x', at: 28, top: 20.4, s: 0.45, mat: 'shingles', main: true },
+  { rects: [[42.4, 13.0, 62.6, 28]], ridge: 'x', at: 28, top: 20.4, s: PITCH_E, mat: 'shingles' },   // east wing front, lower eave
   { rects: [[-1.9, -1.9, 20.3, 27]], ridge: 'z', at: 9.2, top: 14.9, s: 0.56, mat: 'shingles' },
-  ...DORMERS.map(c => { const zf = (c > 42.4 ? 14.2 : 12) - 0.5; return { rects: [[c - 3.7, zf, c + 3.7, zf + 11.5]], ridge: 'z', at: c, top: 19.6, s: 0.6, mat: 'shingles', dormer: { c, zf } }; }),
+  ...DORMERS.map(c => { const zf = dormerFace(c); return { rects: [[c - 3.0, zf, c + 3.0, zf + 11.5]], ridge: 'z', at: c, top: dormerTop(c), s: 0.75, mat: 'shingles', dormer: { c, zf } }; }),
   { rects: [[18.4, 0.2, 30.8, 8.6]], shed: { at0: 0.2, y0: 8.7, s: 0.12 }, mat: 'shingles' },
   { rects: [[22.6, 48.3, 47.9, 58.4]], flat: 9.75, mat: 'roofSheet' },
   { rects: [[47.2, 50.6, 62.0, 52.5]], flat: 9.75, mat: 'roofSheet' },
@@ -376,11 +377,11 @@ export function buildHouse(B, floorDefs) {
   shutters(B, 'h', 0, -1, DEN_WIN[0], DEN_WIN[1], DEN_WIN[2], DEN_WIN[3]);
   // small dark attic window high in the den gable, dormer windows
   appliedWindow(B, 'h', -0.035, -1, 7.8, 10.6, 10.5, 11.8, 'roof', true);
-  DORMERS.forEach(c => { const zf = (c > 42.4 ? 14.2 : 12) - 0.5; appliedWindow(B, 'h', zf - 0.03, -1, c - 1.7, c + 1.7, 14.6 + (c > 42.4 ? 0.6 : 0), 16.9 + (c > 42.4 ? 0.3 : 0)); });
+  DORMERS.forEach(c => { const zf = dormerFace(c), t = dormerTop(c); appliedWindow(B, 'h', zf - 0.03, -1, c - 1.3, c + 1.3, t - 3.85, t - 2.6); });
   // gable-end windows upstairs (northeast)
   // chimney
-  B.box('roof', 'brickWall', 17.2, 13, 19.6, 16.6, 9.6, 24.5); B.box('roof', 'foundation', 17.0, 12.8, 19.8, 16.8, 24.5, 24.85);
-  B.box('roof', 'darkMetal', 17.7, 13.6, 19.1, 16.0, 24.85, 25.6);
+  B.box('roof', 'brickWall', 17.2, 13, 19.6, 16.6, 9.6, 18.6); B.box('roof', 'foundation', 17.0, 12.8, 19.8, 16.8, 18.6, 18.95);
+  B.box('roof', 'darkMetal', 17.7, 13.6, 19.1, 16.0, 18.95, 19.6);
   buildRoof(B);
   // gutters along the main eaves
   const gut = (x0, x1, z, y) => { B.box('roof', 'trim', x0, z - 0.42, x1, z + 0.02, y - 0.95, y - 0.55); };

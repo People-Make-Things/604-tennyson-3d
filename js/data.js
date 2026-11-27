@@ -2,10 +2,18 @@
 // Outer walls: City of Palo Alto footprint (OSM way 231878571). Rooms: estimated from the tour video and listing photos.
 export const OUTLINE = [[0,0],[18.4,0],[18.4,8.6],[42.4,8.6],[42.4,14.2],[61.4,14.2],[61.4,51.8],[47.4,51.8],[47.4,57.7],[23,57.7],[23,48.6],[0,48.6]];
 export const FY = [0, 10];
-export const RIDGE_Z = 28, ROOF_TOP = 13.6, PITCH = 0.65;
-export const DORMERS = [24, 39, 52];
-export const hU = (z, x) => { let h = Math.max(0.5, Math.min(ROOF_TOP, ROOF_TOP - PITCH*Math.abs(z - RIDGE_Z)));
-  if (x != null && z < 15 && DORMERS.some(c => Math.abs(x - c) < 3)) h = Math.max(h, 7.4); return h; };
+// Main roof kept low as in the street photo: ridge 20.4 ft above the ground floor at z = 28, front plane at 0.45,
+// steeper (0.63) over the front of the east wing so its eave sits at the one-storey height the photo shows.
+// Dormers at the aerial's three positions; each dormer ridge is 4.2 ft above the roof at its face.
+export const RIDGE_Z = 28, ROOF_TOP = 10.05, PITCH = 0.45, PITCH_E = 0.63;
+export const DORMERS = [24, 38.5, 50.5];
+export const dormerFace = c => (c > 42.4 ? 14.2 : 12) - 0.5;
+export const dormerTop = c => 20.4 - (c > 42.4 ? PITCH_E : PITCH) * (RIDGE_Z - dormerFace(c)) + 4.2;
+export const hU = (z, x) => {
+  const p = x != null && x > 42.4 && z < RIDGE_Z ? PITCH_E : PITCH;
+  let h = Math.max(0.5, Math.min(ROOF_TOP, ROOF_TOP - p * Math.abs(z - RIDGE_Z)));
+  if (x != null && z < 16) for (const c of DORMERS) if (Math.abs(x - c) < 2.4) h = Math.max(h, dormerTop(c) - 10.8 - 0.75 * Math.abs(x - c));
+  return h; };
 export const HFN = [() => 9, hU];
 export const C = { wall:'paint', den:'paneling', bathG:'paintGreen', half:'paintGrey', oak:'oak', oakDark:'oakDark', terra:'terra', tileBlue:'tileHex', tileBeige:'tileBeige', tileWhite:'tileWhite', brick:'brick', deck:'deck', grass:'grass', grass2:'grass', concrete:'concrete', gravel:'gravel' };
 export const ROOMS = [

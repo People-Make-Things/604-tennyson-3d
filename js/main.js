@@ -71,7 +71,7 @@ async function start() {
   }
   sun.castShadow = true;
   // tight frustum around the lot (house, front yard, near garden) so leaf and branch shadows stay crisp
-  Object.assign(sun.shadow.camera, { left: -105, right: 105, top: 105, bottom: -105, near: 150, far: 700 });
+  Object.assign(sun.shadow.camera, { left: -105, right: 105, top: 105, bottom: -105, near: 5, far: 800 });   // near stays small: tall trees toward the sun must not fall in front of it
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0002; sun.shadow.normalBias = 0.04; sun.shadow.radius = 1.5;
   scene.add(sun, sun.target);
 

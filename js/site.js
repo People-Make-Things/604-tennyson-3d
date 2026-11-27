@@ -108,15 +108,17 @@ function mergeGeos(list) {
 
 // ---------- trees ----------
 const TREES = [
-  // [model, x, z, height ft, rotation]
-  ['redwood_a', -16, 104, 112], ['redwood_b', -4, 114, 104], ['redwood_a', 56, 110, 118], ['redwood_b', 38, 128, 96],
-  ['redwood_b', 34, 74, 98],                      // the tall redwood seen above the roof in the listing photo
-  ['cedar', 84, -16, 70], ['cedar', 96, 30, 58],   // deodar cedars at the east corner
-  ['oak', -24, -6, 52], ['oak', -26, 66, 48], ['oak_m', 80, 86, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
-  ['maple_red', 40, -16, 19], ['maple_red', 50, -9, 16], ['maple_red', 33.5, -6.5, 15],
-  ['maple_gold', 18.6, -8.5, 29],
-  ['oak_m', -24, -40, 34], ['oak_m', 112, -40, 38],
-  ['cedar', -110, 160, 64], ['redwood_a', 150, 120, 104], ['oak_m', 50, 138, 46], ['oak', 72, 126, 54], ['redwood_b', 92, 140, 96], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
+  // [model, x, z, height ft, rotation, crown width scale]; front-yard trees placed by trunk base and crown outline
+  // against listing photo zillow-01 from the registered street camera (see SHOTS.street in main.js)
+  // back-garden redwoods sit in line behind the trees the photo shows, leaving its two patches of open sky above the roof
+  ['redwood', -30, 104, 112, 0, 1.5], ['redwood', -44, 122, 104, 0, 1.4], ['redwood', -36, 112, 118, 0, 1.5], ['redwood', 26, 126, 96, 0, 1.4],
+  ['redwood', 22, 68, 92, 0, 1.6],                // the tall sparse redwood above the roof, centre of the listing photo
+  ['deodar', 82, 72, 64, 0, 1.25], ['deodar', 96, 30, 56, 0, 1.2], // dense dark cedars behind the left (east) roof
+  ['oak_live', -20, 14, 52], ['oak', -26, 66, 48], ['oak_m', 80, 96, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
+  ['jmaple', 36, 4, 15, 0, 1.1], ['jmaple', 45, 10.5, 13], ['jmaple', 51, 11, 11, 0, 0.9],   // orange Japanese maples against the left facade
+  ['entry_tree', 20.2, -6, 18],                    // yellow-green tree over the entry and the den wing
+  ['oak_m', 112, -40, 38],
+  ['deodar', -110, 160, 64], ['redwood', 150, 120, 104, 0, 1.4], ['oak_m', 30, 140, 46], ['oak', 100, 126, 54], ['redwood', 120, 140, 96, 0, 1.4], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
 ];
 const BUSHES = [];
 (() => {
@@ -149,7 +151,7 @@ export async function loadTrees(group, onProgress) {
   const want = [...new Set([...TREES, ...BUSHES].map(t => t[0]))];
   const models = {};
   await Promise.all(want.map(async n => { models[n] = (await loader.loadAsync('assets/trees/' + n + '.glb')).scene; onProgress && onProgress(n); }));
-  const all = [...TREES.map(t => ({ n: t[0], x: t[1], z: t[2], h: t[3], r: (t[1] * 7.3 + t[2] * 3.1) % 6.28, w: 1 })), ...BUSHES.map(b => ({ n: b[0], x: b[1], z: b[2], h: b[3], r: b[4], w: b[5] || 1 }))];
+  const all = [...TREES.map(t => ({ n: t[0], x: t[1], z: t[2], h: t[3], r: t[4] || (t[1] * 7.3 + t[2] * 3.1) % 6.28, w: t[5] || 1 })), ...BUSHES.map(b => ({ n: b[0], x: b[1], z: b[2], h: b[3], r: b[4], w: b[5] || 1 }))];
   for (const n of want) {
     const list = all.filter(t => t.n === n);
     const root = models[n];
@@ -170,10 +172,15 @@ export async function loadTrees(group, onProgress) {
         const tx = texture(mat.map, uv());
         const autumn = tint.r > tint.g * 1.15;
         const lum = dot(tx.rgb, vec3(0.3, 0.59, 0.11));
-        const base = autumn ? vec3(lum).mul(2.1).mul(color(tint)) : tx.rgb.mul(color(tint));
+        let base = autumn ? vec3(lum).mul(2.5).mul(color(tint)) : tx.rgb.mul(color(tint));
+        // the entry tree is turning: world-space patches of yellow and orange through the green crown
+        if (n === 'entry_tree') {
+          const f = mx_noise_float(positionWorld.mul(0.35)).mul(0.5).add(0.5);
+          base = mix(base, vec3(lum).mul(2.3).mul(mix(color('#E8C040'), color('#E07A30'), smoothstep(0.7, 0.95, f))), smoothstep(0.35, 0.7, f));
+        }
         mat.colorNode = base.mul(v);
         mat.opacityNode = tx.a;
-        mat.emissiveNode = base.mul(0.06);   // light scattered through the leaves
+        mat.emissiveNode = base.mul(autumn || n === 'entry_tree' ? 0.14 : 0.06);   // light scattered through the leaves
       } else {
         const t = src.name.includes('pine') ? bark.pine : bark.oak;
         mat = new THREE.MeshStandardNodeMaterial({ map: t[0], normalMap: t[1], color: src.color, roughness: 0.95, metalness: 0 });
