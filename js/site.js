@@ -76,11 +76,12 @@ export function buildSite(B) {
 export function buildFence(group, mats) {
   const xs = [];
   for (let x = -41.2; x < 64; x += 0.62) if (x < 22.3 || x > 26.7) xs.push(x);
-  const geo = new THREE.BoxGeometry(0.3, 3.3, 0.07);
+  // broad flat boards (about 5.5 in by 1 in) with a single angled cut on top, as in the listing photo
+  const geo = new THREE.BoxGeometry(0.46, 3.3, 0.085);
   const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0) pos.setY(i, pos.getY(i) + (Math.abs(pos.getX(i)) < 0.01 ? 0.2 : 0));
-  const top = new THREE.ConeGeometry(0.212, 0.3, 4, 1); top.rotateY(Math.PI / 4); top.scale(1, 1, 0.33); top.translate(0, 1.8, 0);
-  const merged = mergeGeos([geo, top]);
+  for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0) pos.setY(i, pos.getY(i) + (pos.getX(i) < 0 ? 0.26 : 0));
+  geo.computeVertexNormals();
+  const merged = mergeGeos([geo]);
   const im = new THREE.InstancedMesh(merged, mats.picket, xs.length);
   const m = new THREE.Matrix4();
   xs.forEach((x, i) => { m.makeTranslation(x, GY + 1.65, -33.1); im.setMatrixAt(i, m); });
