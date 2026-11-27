@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Real photo views · 604 Tennyson Ave, Palo Alto</title>
+<meta name="description" content="Walk through 3D views of 604 Tennyson Ave, reconstructed from the listing tour video.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{ --glass:rgba(250,250,247,.78); --ink:#1B241E; --muted:#5B655D; --line:rgba(30,43,34,.12); --accent:#9E2B25;
+  --sky-top:#9fb2c0; --sky-mid:#5d6c60; --sky-bottom:#3a4030; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#1c221e;color:var(--ink);font:14px/1.45 "Schibsted Grotesk",system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#sky{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 48%,var(--sky-bottom) 100%);transition:background 1s}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;opacity:0;transition:opacity .9s ease}
+#c.on{opacity:1}
+#c.drag{cursor:grabbing}
+#poster{position:fixed;top:0;left:50%;height:100%;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .9s ease;object-fit:cover}
+#poster.on{opacity:1}
+#edge{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 120% 100% at 50% 50%,transparent 62%,rgba(15,20,17,.28) 100%)}
+.glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid rgba(255,255,255,.5);box-shadow:0 10px 30px rgba(20,30,25,.16)}
+header{position:fixed;left:14px;top:max(14px,env(safe-area-inset-top));display:flex;align-items:center;gap:10px;padding:7px 12px 7px 8px;border-radius:12px}
+header a{font:inherit;font-size:12.5px;color:var(--ink);text-decoration:none;border:1px solid var(--line);background:rgba(255,255,255,.75);border-radius:7px;padding:5px 9px;white-space:nowrap}
+header a:hover{background:#fff}
+header h1{margin:0;font-size:14.5px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+header p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.2}
+#dock{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(640px,calc(100% - 20px));display:flex;flex-direction:column;gap:6px;align-items:stretch}
+#bar{border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:8px}
+#scenes{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#scenes::-webkit-scrollbar{display:none}
+#scenes button{flex:0 0 auto;font:inherit;font-size:12.5px;border:1px solid var(--line);background:rgba(255,255,255,.75);color:var(--ink);border-radius:7px;padding:6px 11px;cursor:pointer}
+#scenes button:hover{background:#fff}
+#scenes button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+#scenes button[disabled]{opacity:.45;cursor:default}
+#time{display:flex;align-items:center;gap:8px}
+#play{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;background:var(--ink);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0}
+#play svg{width:12px;height:12px;fill:currentColor}
+#scrub{flex:1;-webkit-appearance:none;appearance:none;height:30px;background:transparent;margin:0;cursor:pointer;touch-action:none}
+#scrub::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ink) var(--p,0%),rgba(27,36,30,.18) var(--p,0%))}
+#scrub::-moz-range-track{height:4px;border-radius:2px;background:rgba(27,36,30,.18)}
+#scrub::-moz-range-progress{height:4px;border-radius:2px;background:var(--ink)}
+#scrub::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:#fff;border:2px solid var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+#scrub::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--ink)}
+#credit{margin:0;text-align:center;font-size:11px;color:rgba(255,255,255,.86);text-shadow:0 1px 3px rgba(0,0,0,.45);letter-spacing:.01em}
+#status{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:9px 14px;border-radius:10px;font-size:13px;pointer-events:none;transition:opacity .4s}
+#status.off{opacity:0}
+#status .bar{height:3px;border-radius:2px;background:rgba(27,36,30,.15);margin-top:7px;overflow:hidden}
+#status .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+#hint{position:fixed;left:50%;top:max(70px,calc(env(safe-area-inset-top) + 64px));transform:translateX(-50%);background:rgba(27,36,30,.78);color:#fff;padding:7px 12px;border-radius:8px;font-size:12.5px;pointer-events:none;transition:opacity .6s;white-space:nowrap}
+#hint.off{opacity:0}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:560px){
+  header{left:10px;right:10px;padding:6px 10px 6px 6px}
+  header p{display:none}
+  #bar{padding:7px}
+}
+@media (prefers-reduced-motion:reduce){ #c,#poster,#status,#hint{transition:none} }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/","@sparkjsdev/spark":"https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.4.0/dist/spark.module.min.js"}}</script>
+</head>
+<body>
+<div id="sky"></div>
+<img id="poster" alt="">
+<canvas id="c" aria-label="3D view reconstructed from the tour video"></canvas>
+<div id="edge"></div>
+<header class="glass">
+  <a href="../">&larr; 3D model</a>
+  <div><h1>Real photo views</h1><p>604 Tennyson Ave, Palo Alto</p></div>
+</header>
+<div id="status" class="glass off"><span>Loading view</span><div class="bar"><i></i></div></div>
+<div id="hint" class="off">Drag to look around &middot; scroll to move</div>
+<div id="dock">
+  <div id="bar" class="glass">
+    <div id="scenes" role="tablist" aria-label="Views"></div>
+    <div id="time">
+      <button id="play" aria-label="Pause"><svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg></button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Position along the recorded path">
+    </div>
+  </div>
+  <p id="credit">Reconstructed from the listing tour video</p>
+</div>
+<script type="module" src="viewer.js"></script>
+</body>
+</html>
