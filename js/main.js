@@ -12,6 +12,7 @@ import { Batcher } from './geo.js';
 import { makeMaterials, neighborMats, pending } from './mats.js';
 import { buildHouse } from './house.js';
 import { buildSite, buildFence, loadTrees, buildNeighbors, buildGrass, buildLeaves, GY } from './site.js';
+import { buildIvy, buildPavilion } from './garden.js';
 
 const $ = s => document.querySelector(s);
 const img = n => 'img/' + n + '.jpg';
@@ -43,7 +44,7 @@ async function start() {
     street: { pos: [23.6, 3.6, -38], tgt: [22.7, 4.3, 10], fov: 56 },   // registered to listing photo zillow-01 (iPhone 1x, at the open gate)
     hero: { pos: [58, 62, -118], tgt: [26, 5, 18], fov: 36 },
     aerial: { pos: [30, 230, -60], tgt: [30, 0, 30], fov: 38 },
-    garden: { pos: [24, 3.6, 62], tgt: [6, 11, 112], fov: 60 },   // from the pergola across the lawn to the terraces (zillow-02)
+    garden: { pos: [24, 3.4, 59.6], tgt: [13, 8.5, 112], fov: 54 },   // from the pergola across the lawn to the terrace (zillow-02)
   };
   const shot = SHOTS[params.get('shot')] || SHOTS.hero;
   camera.position.set(...shot.pos); orbit.target.set(...shot.tgt); camera.fov = shot.fov; camera.updateProjectionMatrix();
@@ -121,7 +122,7 @@ async function start() {
   B.build(G, M);
   G.furn0.visible = G.furn1.visible = false;
   buildFence(G.garden, M);
-  buildGrass(G.garden); buildLeaves(G.garden);
+  buildGrass(G.garden); buildLeaves(G.garden); buildIvy(G.garden); buildPavilion(G.garden, M);
 
   // floors: one mesh per room so rooms can be picked and highlighted
   const floorMeshes = [], labels = [];

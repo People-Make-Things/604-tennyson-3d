@@ -44,26 +44,46 @@ export function buildSite(B) {
   // planting beds along the front and sides of the house
   const bed = (x0, z0, x1, z1) => strip('mulch', x0, z0, x1, z1, 0, 0.05);
   strip('groundcover', -6, -8.5, 21.6, 0, 0, 0.05); bed(27.4, -7.5, 63, 8.6); bed(-6, 0, 0, 48); bed(61.4, 8, 64, 52); bed(-41, -33, -20, -26); bed(30, -33, 64, -29);
-  // back terraces (three brick levels) and curved brick paths
-  for (let k = 0; k < 3; k++) strip(k === 2 ? 'grass' : 'brick', -10, 98 + k * 2.6, 44, 118, 0.05, 0.6 * (k + 1));
-  for (let k = 0; k < 3; k++) strip('brick', -10 + 0, 98 + k * 2.6 - 0.05, 44, 98 + k * 2.6 + 0.35, 0.6 * (k + 1) - 0.08, 0.6 * (k + 1) + 0.02);
-  const path = (p, w, ivy = 0) => {
+  // back terrace (zillow-02): a brick retaining wall with a coping across the far end of the lawn, broad steps
+  // up on the right, a brick planter pier beside them, a higher tier on the left behind the ivy mound
+  {
+    const T = TERRACE, top = GY + T.h;
+    B.box(G, 'brick', T.x0, T.z, T.x1, 131.5, GY - 0.1, top);
+    B.box(G, 'brick', T.x0 - 0.15, T.z - 0.25, T.x1 + 0.15, T.z + 0.9, top, top + 0.18);   // coping
+    for (let k = 0; k < 4; k++) B.box(G, 'brick', T.sx0, T.z - (4 - k) * 1.3, T.sx1, T.z, GY - 0.1, GY + (k + 1) * T.h / 4);
+    B.box(G, 'brick', T.sx0 - 0.8, T.z - 5.6, T.sx0, T.z, GY - 0.1, top + 0.18);               // cheek walls
+    B.box(G, 'brick', T.sx1, T.z - 5.6, T.sx1 + 0.8, T.z, GY - 0.1, top + 0.18);
+    B.box(G, 'brick', T.sx1 + 0.8, T.z - 3.4, T.sx1 + 3.2, T.z, GY - 0.1, top + 0.9);          // planter pier
+    B.box(G, 'brick', 22, T.uz, T.x1, 131.5, top, top + 1.6);                                    // upper tier
+    B.box(G, 'brick', 21.85, T.uz - 0.2, T.x1 + 0.15, T.uz + 0.7, top + 1.6, top + 1.76);
+    // lattice screen on the upper tier
+    for (let x = 23.5; x < 37; x += 0.55) B.box(G, 'pergola', x - 0.05, T.uz + 6, x + 0.05, T.uz + 6.1, top + 1.6, top + 7.4);
+    for (let y = top + 2; y < top + 7.4; y += 0.55) B.box(G, 'pergola', 23.3, T.uz + 5.92, 37, T.uz + 6, y - 0.05, y + 0.05);
+    for (const x of [23.3, 30.2, 37]) B.box(G, 'pergola', x - 0.2, T.uz + 5.8, x + 0.2, T.uz + 6.2, top + 1.6, top + 7.8);
+  }
+  const path = (p, w) => {
     const pt = t => [0, 1].map(i => (1 - t) ** 3 * p[0][i] + 3 * (1 - t) ** 2 * t * p[1][i] + 3 * (1 - t) * t * t * p[2][i] + t ** 3 * p[3][i]);
     for (let t = 0; t < 1; t += 0.01) {
       const a = pt(t), b = pt(t + 0.01);
       const ang = Math.atan2(b[0] - a[0], b[1] - a[1]), mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, len = Math.hypot(b[0] - a[0], b[1] - a[1]) + 0.08;
       B.obox(G, 'brick', mx, GY + 0.04, mz, w, 0.1, len, ang);
-      // ivy bed along the outer side of the path, as in the back garden photo
-      if (ivy) B.obox(G, 'groundcover', mx + Math.cos(ang) * ivy * (w / 2 + 2.6), GY + 0.03, mz - Math.sin(ang) * ivy * (w / 2 + 2.6), 5, 0.06, len, ang);
     }
   };
-  path([[54, 52], [54, 72], [30, 74], [30, 98]], 3.2, -1); path([[9, 62], [4, 76], [24, 84], [20, 98]], 2.6, 1);
-  strip('groundcover', -10, 91, 44, 98, 0, 0.06);   // ivy bank at the foot of the terraces
+  for (const [p, w] of PATHS) path(p, w);
+  // lawn edging: a header course of brick around the lawn
+  for (let a = 0; a < Math.PI * 2; a += 0.025) {
+    const [x, z] = lawnEdge(a), [x2, z2] = lawnEdge(a + 0.025);
+    if (onPath((x + x2) / 2, (z + z2) / 2, 0.2)) continue;
+    B.obox(G, 'brick', (x + x2) / 2, GY + 0.03, (z + z2) / 2, 0.35, 0.08, Math.hypot(x2 - x, z2 - z) + 0.05, Math.atan2(x2 - x, z2 - z));
+  }
   // brick patio under the pergola
   strip('brick', 0, 48.6, 18.4, 62, 0, 0.1);
   // board fence on the back lot line, weathered redwood
   B.box(G, 'pergola', -40, 131.8, 80, 132.1, GY, GY + 6.5);
   for (let x = -40; x < 80; x += 8) B.box(G, 'pergola', x - 0.2, 131.5, x + 0.2, 131.8, GY, GY + 6.7);
+  // board fences down both side lot lines, so the garden is enclosed as in the photos
+  B.box(G, 'pergola', 77.8, 40, 78.1, 132, GY, GY + 6.5); for (let z = 40; z < 132; z += 8) B.box(G, 'pergola', 77.5, z - 0.2, 77.8, z + 0.2, GY, GY + 6.7);
+  B.box(G, 'pergola', -40.1, 52, -39.8, 132, GY, GY + 6.5); for (let z = 52; z < 132; z += 8) B.box(G, 'pergola', -39.8, z - 0.2, -39.5, z + 0.2, GY, GY + 6.7);
   // pergola behind the kitchen
   [0.6, 9.2, 17.8].forEach(x => [49.4, 55.5, 61.6].forEach(z => B.box(G, 'pergola', x - 0.3, z - 0.3, x + 0.3, z + 0.3, GY, 8.6)));
   [0.6, 9.2, 17.8].forEach(x => B.box(G, 'pergola', x - 0.22, 48.4, x + 0.22, 62.6, 8.6, 9.5));
@@ -113,7 +133,11 @@ const TREES = [
   // against listing photo zillow-01 from the registered street camera (see SHOTS.street in main.js)
   // back-garden redwoods sit in line behind the trees the photo shows, leaving its two patches of open sky above the roof
   ['redwood', -30, 104, 112, 0, 1.5], ['redwood', -44, 122, 104, 0, 1.4], ['redwood', -36, 112, 118, 0, 1.5],
-  ['redwood', 22, 124, 124, 0, 1.9],              // the tall redwood above the roof in the listing photo, behind the terraces
+  // the two big redwoods on the terrace (zillow-02); the left one is the tall redwood above the roof in the street photo
+  ['redwood', 17, 108, 112, 0, 1.15], ['redwood', 8.5, 113, 100, 4.4, 1.05],
+  ['redwood', 47, 100, 84, 1.3, 0.85],               // tall trunk at the far left of the garden photo
+  // background canopy beyond the back and side fences, so the garden reads enclosed
+  ['oak', 58, 150, 58], ['oak_m', 20, 156, 52], ['oak_m', 60, 124, 40], ['oak_m', 36, 136, 46], ['oak', -20, 148, 56], ['redwood', 70, 170, 96, 0, 1.4], ['oak_m', 96, 100, 48], ['oak', 104, 60, 52],
   ['deodar', 82, 72, 64, 0, 1.25], ['deodar', 96, 30, 56, 0, 1.2], // dense dark cedars behind the left (east) roof
   ['oak_live', -20, 14, 52], ['oak', -26, 66, 48], ['oak_m', 80, 96, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
   ['jmaple', 36, 4, 15, 0, 1.1], ['jmaple', 45, 10.5, 13], ['jmaple', 51, 11, 11, 0, 0.9],   // orange Japanese maples against the left facade
@@ -137,8 +161,10 @@ const BUSHES = [];
   along(-38, -30, -22, -30, 4, 3, 4.5); along(32, -31, 62, -31, 6, 2.5, 4);
   along(-40, 0, -40, 120, 16, 6, 10);       // hedge along Webster
   along(78, -20, 78, 130, 18, 7, 11);       // hedge along the east lot line
-  along(-12, 96, 46, 96, 10, 2.5, 4);       // ivy-covered bank at the terraces
-  along(-38, 120, 80, 132, 16, 8, 12);      // back lot line
+  S('bush_c', 17.6, 97.6, 4.2, 1.1); S('bush_a', 34, 98, 3.6, 1.2);   // shrubs on the ivy mound beside the steps
+  along(-60, 140, 110, 146, 30, 22, 34);    // tall screen of trees and shrubs beyond the back fence
+  along(84, 30, 90, 140, 14, 16, 26);       // and beyond the east fence
+  along(-38, 124, 80, 130, 16, 8, 12);      // back lot line
 })();
 
 export async function loadTrees(group, onProgress) {
@@ -299,9 +325,19 @@ const winTrim = new THREE.BoxGeometry(3.6, 4.8, 0.24);
 // a long way from the house so only the near lawn pays for them.
 // back lawn: a curved bowl between the brick paths, ivy beds around it
 const bez = (p, t) => [0, 1].map(i => (1 - t) ** 3 * p[0][i] + 3 * (1 - t) ** 2 * t * p[1][i] + 3 * (1 - t) * t * t * p[2][i] + t ** 3 * p[3][i]);
-const PATH_A = [[54, 52], [54, 72], [30, 74], [30, 98]], PATH_B = [[9, 62], [4, 76], [24, 84], [20, 98]];
-const nearPath = (p, x, z, w) => { for (let t = 0; t <= 1; t += 0.02) { const q = bez(p, t); if (Math.hypot(q[0] - x, q[1] - z) < w) return true; } return false; };
-const lawnBack = (x, z) => { const dx = (x - 27) / 19, dz = (z - 82) / 12; return dx * dx + dz * dz < 1 && !nearPath(PATH_A, x, z, 2.1) && !nearPath(PATH_B, x, z, 1.9); };
+// back garden layout, laid out from zillow-02 seen from the pergola: the left path curves along the lawn up to the
+// ivy mound, a second path crosses in front of the camera to the right, the lawn is one irregular bowl up to the terrace
+export const TERRACE = { z: 101, uz: 109, x0: -6, x1: 38, h: 2.0, sx0: 2.5, sx1: 15, pavilion: { cx: 1, cz: 121, w: 14, d: 9.5 } };
+const PATHS = [[[[31, 52], [28, 72], [35, 90], [25, 99]], 3.2], [[[25, 63], [16, 68], [5, 70], [-8, 66]], 3.0], [[[-8, 66], [-17, 76], [-13, 92], [-4, 98]], 2.6]];
+export const onPath = (x, z, w = 0) => { for (const [p, pw] of PATHS) for (let t = 0; t <= 1; t += 0.02) { const q = bez(p, t); if (Math.hypot(q[0] - x, q[1] - z) < pw / 2 + w) return true; } return false; };
+// irregular lawn outline: a radius that wobbles with angle
+const LAWN = { cx: 11, cz: 86, rx: 19, rz: 12.4 };
+const lawnR = a => 1 + 0.07 * Math.sin(a * 3 + 0.7) + 0.05 * Math.sin(a * 5 + 2.1) + 0.03 * Math.sin(a * 9);
+const lawnEdge = a => [LAWN.cx + Math.cos(a) * LAWN.rx * lawnR(a), LAWN.cz + Math.sin(a) * LAWN.rz * lawnR(a)];
+// approximate distance (ft) outside the lawn edge and outside the nearest path edge; negative inside
+export const lawnDist = (x, z) => { const dx = (x - LAWN.cx) / LAWN.rx, dz = (z - LAWN.cz) / LAWN.rz; return (Math.hypot(dx, dz) / lawnR(Math.atan2(dz, dx)) - 1) * LAWN.rz; };
+export const pathDist = (x, z) => { let d = 1e9; for (const [p, pw] of PATHS) for (let t = 0; t <= 1; t += 0.02) { const q = bez(p, t); d = Math.min(d, Math.hypot(q[0] - x, q[1] - z) - pw / 2); } return d; };
+export const lawnBack = (x, z, m = 0) => { const dx = (x - LAWN.cx) / (LAWN.rx + m), dz = (z - LAWN.cz) / (LAWN.rz + m); const a = Math.atan2(dz, dx); return dx * dx + dz * dz < lawnR(a) ** 2 && !onPath(x, z, -0.2); };
 export function buildGrass(group) {
   let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   // one clump: 14 tapered blades (one triangle each), normals mostly up so they shade like the turf
@@ -330,7 +366,7 @@ export function buildGrass(group) {
   col = mix(col, dry, smoothstep(0.62, 0.9, macro).mul(uv().y).mul(0.55));
   mat.colorNode = col.mul(fine.mul(0.35).add(0.8));
   // areas: front lawn either side of the walk, and the parkway strip
-  const rects = [[-40.5, -32.9, 21.8, -8.6], [27.2, -32.9, 64, -7.6], [21.8, -32.9, 27.2, -30.5], [-40, -41.5, 64, -38.2], [6, 66, 50, 96]];
+  const rects = [[-40.5, -32.9, 21.8, -8.6], [27.2, -32.9, 64, -7.6], [21.8, -32.9, 27.2, -30.5], [-40, -41.5, 64, -38.2], [-10, 70, 32, 100]];
   const walkX = z => 24.5 - 0.75 * Math.sin(Math.PI * 2 * (z + 33.5) / 30.4) * Math.min(1, (-3.1 - z) / 6);
   const pts = [];
   for (const [x0, z0, x1, z1] of rects) {
