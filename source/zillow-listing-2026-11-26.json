@@ -1,0 +1,161 @@
+{
+ "zpid": 19496239,
+ "streetAddress": "604 Tennyson Ave",
+ "city": "Palo Alto",
+ "state": "CA",
+ "zipcode": "94301",
+ "latitude": 37.43932,
+ "longitude": -122.14138,
+ "homeStatus": "FOR_RENT",
+ "price": 12000,
+ "bedrooms": 5,
+ "bathrooms": 3,
+ "livingArea": 3078,
+ "homeType": "SINGLE_FAMILY",
+ "description": "5 bedroom, 2.5 bathroom, 3,000 SQFT Single Family House in Prime Old Palo Alto. Close to Stanford University and California Avenue's renowned dining and shopping. top Palo alto public and private schools, Rinconada Park, the Community Center etc. Traditional style house with beautiful front and back yard. TESLA charger onsite.\n\nOwner pays yard service. Tenant pays utilities and internet. Starting 1 year lease, then month by month.",
+ "priceHistory": [
+  {
+   "date": "2026-11-17",
+   "price": 12000,
+   "pricePerSquareFoot": 4,
+   "event": "Listed for rent",
+   "source": "Zillow Rentals"
+  },
+  {
+   "date": "2026-11-16",
+   "price": 9650000,
+   "pricePerSquareFoot": 3135,
+   "event": "Sold",
+   "source": "MLSListings Inc"
+  },
+  {
+   "date": "2026-09-18",
+   "price": 9500000,
+   "pricePerSquareFoot": 3086,
+   "event": "Pending sale",
+   "source": "MLSListings Inc"
+  },
+  {
+   "date": "2026-09-10",
+   "price": 9500000,
+   "pricePerSquareFoot": 3086,
+   "event": "Listed for sale",
+   "source": "MLSListings Inc"
+  }
+ ],
+ "lastSoldPrice": 9650000,
+ "parcelId": "12403001",
+ "daysOnZillow": 9,
+ "brokerageName": "Open Realty",
+ "hdpUrl": "/homedetails/604-Tennyson-Ave-Palo-Alto-CA-94301/19496239_zpid/",
+ "resoFacts": {
+  "appliances": [
+   "Dishwasher",
+   "Dryer",
+   "Oven",
+   "Refrigerator",
+   "Washer"
+  ],
+  "availabilityDate": 1794960000000,
+  "bathrooms": 3,
+  "bathroomsFull": 3,
+  "bathroomsFloat": 3,
+  "bedrooms": 5,
+  "cityRegion": "Palo Alto",
+  "feesAndDues": [
+   {
+    "type": "Deposit",
+    "fee": "$12,000",
+    "name": null,
+    "phone": null
+   }
+  ],
+  "flooring": [
+   "Hardwood"
+  ],
+  "hasHeating": true,
+  "hasPetsAllowed": true,
+  "heating": [
+   "Forced Air"
+  ],
+  "homeType": "SingleFamily",
+  "laundryFeatures": [
+   "In Unit"
+  ],
+  "leaseTerm": "1 Year",
+  "livingArea": "3,078 sqft",
+  "onMarketDate": 1794873600000,
+  "otherParking": [
+   "Contact manager"
+  ],
+  "parcelNumber": "12403001",
+  "parkingFeatures": [
+   "Off Street"
+  ],
+  "pricePerSquareFoot": 4,
+  "propertySubType": [
+   "Single Family Residence"
+  ],
+  "taxAssessedValue": 6300000,
+  "allowedPets": [
+   "Cats",
+   "Dogs",
+   "Small Dogs"
+  ]
+ },
+ "atAGlanceFacts": [
+  {
+   "factLabel": "Date available",
+   "factValue": "Available Now"
+  },
+  {
+   "factLabel": "Type",
+   "factValue": "Single Family Residence"
+  },
+  {
+   "factLabel": "Cooling",
+   "factValue": null
+  },
+  {
+   "factLabel": "Heating",
+   "factValue": "Forced Air"
+  },
+  {
+   "factLabel": "Pets",
+   "factValue": "Cats, Dogs, Small Dogs"
+  },
+  {
+   "factLabel": "Parking",
+   "factValue": "Off Street"
+  },
+  {
+   "factLabel": "Laundry",
+   "factValue": "In Unit"
+  },
+  {
+   "factLabel": "Deposit & fees",
+   "factValue": "$12,000"
+  },
+  {
+   "factLabel": "One-time fees",
+   "factValue": "$12,035"
+  }
+ ],
+ "photos": [
+  "https://photos.zillowstatic.com/fp/be11c8cbd624d99b421b27223cd5a0fc-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/d93b7533f3336ce85bf4812e7acbd9cc-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/ef527a28ad793b353c1ad9849ad2b8a6-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/4984386c92cafcfa335777a03462240b-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/cc6f5014c23489e8276f34891bb7e6db-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/b42ecdc793433b7fe58bb75a8a3c4075-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/52d90daceda7b12b4157b6c447ca2fb7-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/a9c82b86c2c9c4001aea8ca92354e243-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/c1ab8a2a8fc72e8e26a9086d24d9e46d-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/2dd0ea24016170bc8856a64c50b8c109-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/9ebcfb8297f970269d223b0e2ec08286-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/0c5151342fcfdfe160930341e33f34fb-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/e56b95ca55cdbc2c2670762118456d44-uncropped_scaled_within_1536_1152.jpg",
+  "https://photos.zillowstatic.com/fp/61d9256096cabecc7a6f1b12f41feff7-uncropped_scaled_within_1536_1152.jpg"
+ ],
+ "_captured": "2026-11-26 from https://www.zillow.com/homedetails/604-Tennyson-Ave-Palo-Alto-CA-94301/19496239_zpid/"
+}
