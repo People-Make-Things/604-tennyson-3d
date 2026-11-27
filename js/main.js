@@ -26,7 +26,7 @@ async function start() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, params.has('hq') ? 2 : 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = +(params.get('exp') || 0.82);
+  renderer.toneMappingExposure = +(params.get('exp') || 0.98);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   $('#app').appendChild(renderer.domElement);
@@ -44,7 +44,7 @@ async function start() {
     street: { pos: [23.6, 3.6, -38], tgt: [22.7, 4.3, 10], fov: 56 },   // registered to listing photo zillow-01 (iPhone 1x, at the open gate)
     hero: { pos: [58, 62, -118], tgt: [26, 5, 18], fov: 36 },
     aerial: { pos: [30, 230, -60], tgt: [30, 0, 30], fov: 38 },
-    garden: { pos: [24, 3.4, 59.6], tgt: [13, 8.5, 112], fov: 54 },   // from the pergola across the lawn to the terrace (zillow-02)
+    garden: { pos: [24, 3.4, 59.6], tgt: [12, 9.5, 112], fov: 64 },   // from the pergola across the lawn to the terrace (zillow-02)
   };
   const shot = SHOTS[params.get('shot')] || SHOTS.hero;
   camera.position.set(...shot.pos); orbit.target.set(...shot.tgt); camera.fov = shot.fov; camera.updateProjectionMatrix();
@@ -92,6 +92,22 @@ async function start() {
     const toF = data instanceof Uint16Array ? THREE.DataUtils.fromHalfFloat : (v => v);
     for (let i = 0; i < width * height; i += 3) { const l = toF(data[i * 4]) + toF(data[i * 4 + 1]); if (l > best) { best = l; bi = i; } }
     const u = (bi % width) / width; skySunAz = (u - 0.5) * Math.PI * 2 * -1 + Math.PI / 2;
+    // the listing photo's sky is a deep saturated blue behind white cirrus: push the blue sky (not the clouds
+    // or the sun) toward it, more toward the zenith
+    const fromH = data instanceof Uint16Array ? THREE.DataUtils.fromHalfFloat : (v => v), toH = data instanceof Uint16Array ? THREE.DataUtils.toHalfFloat : (v => v);
+    for (let y = 0; y < height / 2; y++) {
+      const up = 1 - y / (height / 2);   // 1 at the zenith, 0 at the horizon
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const r = fromH(data[i]), g = fromH(data[i + 1]), b = fromH(data[i + 2]);
+        const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        const blue = Math.max(0, Math.min(1, (b - r) / (b + 1e-4) * 2.2));   // clouds are grey-white, sky is blue
+        if (blue <= 0 || L > 20) continue;
+        const k = 1 + blue * (0.55 + 0.45 * up), dk = 1 - blue * 0.12 * (0.4 + 0.6 * up);
+        data[i] = toH(Math.max(0, (L + (r - L) * k) * dk)); data[i + 1] = toH(Math.max(0, (L + (g - L) * k) * dk)); data[i + 2] = toH(Math.max(0, (L + (b - L) * k) * dk));
+      }
+    }
+    skyTex.needsUpdate = true;
   }
   scene.background = skyTex; scene.environment = skyTex;
   scene.backgroundIntensity = 1.3;
@@ -184,7 +200,10 @@ async function start() {
   const glow = bloom(aa, 0.12, 0.35, 0.92);
   // gentle lens vignette
   const vig = smoothstep(1.25, 0.35, length(screenUV.sub(0.5).mul(vec3(1.6, 1.0, 0).xy)));
-  pipeline.outputNode = vec4(aa.rgb.add(glow.rgb).mul(mix(float(0.84), float(1), vig)), 1);
+  // grade toward the listing photos: a little more saturation and a lifted midtone
+  const graded = aa.rgb.add(glow.rgb);
+  const luma = graded.dot(vec3(0.2126, 0.7152, 0.0722));
+  pipeline.outputNode = vec4(mix(vec3(luma), graded, float(1.14)).max(0).mul(mix(float(0.86), float(1), vig)), 1);
 
   // ---------- neighbours and trees (streamed in after first frame) ----------
   const nmats = neighborMats();

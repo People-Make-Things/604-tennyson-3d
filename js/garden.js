@@ -79,10 +79,10 @@ export function buildIvy(group) {
   const h1 = hash(instanceIndex.add(31)), h2 = hash(instanceIndex.add(77));
   const macro = mx_noise_float(positionWorld.xz.mul(0.12)).mul(0.5).add(0.5);
   // old leaves deep green, new growth brighter yellow-green; a few lighter, sun-bleached leaves
-  let col = mix(color('#22401A'), color('#3F6A24'), h1);
-  col = mix(col, color('#6E9638'), smoothstep(0.72, 1, h2).mul(0.8));
+  let col = mix(color('#2C4E1E'), color('#4E7E2C'), h1);
+  col = mix(col, color('#86AE44'), smoothstep(0.7, 1, h2).mul(0.85));
   col = col.mul(macro.mul(0.3).add(0.85));
-  mat.colorNode = tx.rgb.mul(col).mul(1.35);
+  mat.colorNode = tx.rgb.mul(col).mul(1.5);
   mat.opacityNode = tx.a;
   const pts = [];
   const step = 0.24;

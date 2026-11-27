@@ -132,18 +132,18 @@ const TREES = [
   // [model, x, z, height ft, rotation, crown width scale]; front-yard trees placed by trunk base and crown outline
   // against listing photo zillow-01 from the registered street camera (see SHOTS.street in main.js)
   // back-garden redwoods sit in line behind the trees the photo shows, leaving its two patches of open sky above the roof
-  ['redwood', -30, 104, 112, 0, 1.5], ['redwood', -44, 122, 104, 0, 1.4], ['redwood', -36, 112, 118, 0, 1.5],
+  ['redwood', -30, 104, 112, 0, 0.95], ['redwood', -44, 122, 104, 0, 0.9], ['redwood', -36, 112, 118, 0, 0.95],
   // the two big redwoods on the terrace (zillow-02); the left one is the tall redwood above the roof in the street photo
-  ['redwood', 17, 108, 112, 0, 1.15], ['redwood', 8.5, 113, 100, 4.4, 1.05],
-  ['redwood', 47, 100, 84, 1.3, 0.85],               // tall trunk at the far left of the garden photo
+  ['redwood', 17, 108, 112, 0, 1.05], ['redwood', 8.5, 113, 100, 4.4, 1.0],
+  ['redwood', 47, 100, 84, 1.3, 0.75],               // tall trunk at the far left of the garden photo
   // background canopy beyond the back and side fences, so the garden reads enclosed
-  ['oak', 58, 150, 58], ['oak_m', 20, 156, 52], ['oak_m', 60, 124, 40], ['oak_m', 36, 136, 46], ['oak', -20, 148, 56], ['redwood', 70, 170, 96, 0, 1.4], ['oak_m', 96, 100, 48], ['oak', 104, 60, 52],
+  ['oak', 58, 150, 58], ['oak_m', 20, 156, 52], ['oak_m', 60, 124, 40], ['oak_m', 36, 136, 46], ['oak', -20, 148, 56], ['redwood', 70, 170, 96, 0, 0.9], ['oak_m', 96, 100, 48], ['oak', 104, 60, 52],
   ['deodar', 82, 72, 64, 0, 1.25], ['deodar', 96, 30, 56, 0, 1.2], // dense dark cedars behind the left (east) roof
   ['oak_live', -20, 14, 52], ['oak', -26, 66, 48], ['oak_m', 80, 96, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
   ['jmaple', 36, 4, 15, 0, 1.1], ['jmaple', 45, 10.5, 13], ['jmaple', 51, 11, 11, 0, 0.9],   // orange Japanese maples against the left facade
   ['entry_tree', 20.2, -6, 18],                    // yellow-green tree over the entry and the den wing
   ['oak_m', 112, -40, 38],
-  ['deodar', -110, 160, 64], ['redwood', 150, 120, 104, 0, 1.4], ['oak_m', 30, 140, 46], ['oak', 100, 126, 54], ['redwood', 120, 140, 96, 0, 1.4], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
+  ['deodar', -110, 160, 64], ['redwood', 150, 120, 104, 0, 0.9], ['oak_m', 30, 140, 46], ['oak', 100, 126, 54], ['redwood', 120, 140, 96, 0, 0.9], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
 ];
 const BUSHES = [];
 (() => {
@@ -166,6 +166,59 @@ const BUSHES = [];
   along(84, 30, 90, 140, 14, 16, 26);       // and beyond the east fence
   along(-38, 124, 80, 130, 16, 8, 12);      // back lot line
 })();
+
+// Leaf-card edits per model: keep thins the crown (a share of cards dropped), split replaces each card with
+// two smaller ones, offset around the original, for a finer, denser canopy.
+const CROWN = { redwood: 2.3 };
+function toFloat(g) {
+  const out = new THREE.BufferGeometry();
+  for (const [k, a] of Object.entries(g.attributes)) { const f = new Float32Array(a.count * a.itemSize); for (let i = 0; i < a.count; i++) for (let j = 0; j < a.itemSize; j++) f[i * a.itemSize + j] = a.getComponent(i, j); out.setAttribute(k, new THREE.BufferAttribute(f, a.itemSize)); }
+  if (g.index) out.setIndex(Array.from(g.index.array));
+  return out;
+}
+const LEAF_EDIT = { redwood: { keep: 0.62 }, oak: { split: 0.72 }, oak_m: { split: 0.72 }, oak_live: { split: 0.75 }, deodar: { keep: 0.9 } };
+function reshapeLeaves(geo, ed) {
+  if (!ed || !geo.index) return geo;
+  const idx = geo.index.array, n = geo.attributes.position.count;
+  const parent = new Int32Array(n); for (let i = 0; i < n; i++) parent[i] = i;
+  const find = a => { while (parent[a] !== a) a = parent[a] = parent[parent[a]]; return a; };
+  for (let t = 0; t < idx.length; t += 3) { const a = find(idx[t]); parent[find(idx[t + 1])] = a; parent[find(idx[t + 2])] = find(idx[t]); }
+  const cards = new Map();
+  for (let t = 0; t < idx.length; t += 3) { const r = find(idx[t]); let c = cards.get(r); if (!c) cards.set(r, c = []); c.push(idx[t], idx[t + 1], idx[t + 2]); }
+  let s = 91; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const names = Object.keys(geo.attributes), src = names.map(k => geo.attributes[k]);
+  const out = names.map(() => []), outIdx = [];
+  const emit = (tris, xf) => {
+    const map = new Map();
+    for (const v of tris) {
+      if (!map.has(v)) {
+        map.set(v, out[0].length / src[0].itemSize);
+        src.forEach((a, k) => { for (let j = 0; j < a.itemSize; j++) out[k].push(a.getComponent(v, j)); });   // getComponent undoes quantization
+        if (xf) { const pk = names.indexOf('position'), o = out[pk], b = o.length - 3; const p = xf([o[b], o[b + 1], o[b + 2]]); o[b] = p[0]; o[b + 1] = p[1]; o[b + 2] = p[2]; }
+      }
+      outIdx.push(map.get(v));
+    }
+  };
+  const P = geo.attributes.position;
+  for (const tris of cards.values()) {
+    if (ed.keep && rnd() > ed.keep) continue;
+    if (!ed.split) { emit(tris); continue; }
+    // centre and size of the card
+    let cx = 0, cy = 0, cz = 0; const vs = [...new Set(tris)];
+    for (const v of vs) { cx += P.getX(v); cy += P.getY(v); cz += P.getZ(v); }
+    cx /= vs.length; cy /= vs.length; cz /= vs.length;
+    let rad = 0; for (const v of vs) rad = Math.max(rad, Math.hypot(P.getX(v) - cx, P.getY(v) - cy, P.getZ(v) - cz));
+    for (let k = 0; k < 2; k++) {
+      const a = rnd() * 6.28, e = (rnd() - 0.5) * 2, d = rad * 0.55;
+      const ox = Math.cos(a) * d, oy = e * d * 0.6, oz = Math.sin(a) * d, sc = ed.split;
+      emit(tris, p => [cx + (p[0] - cx) * sc + ox, cy + (p[1] - cy) * sc + oy, cz + (p[2] - cz) * sc + oz]);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  names.forEach((k, i) => g.setAttribute(k, new THREE.Float32BufferAttribute(out[i], src[i].itemSize)));
+  g.setIndex(outIdx);
+  return g;
+}
 
 export async function loadTrees(group, onProgress) {
   const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
@@ -200,6 +253,8 @@ export async function loadTrees(group, onProgress) {
         const autumn = tint.r > tint.g * 1.15;
         const lum = dot(tx.rgb, vec3(0.3, 0.59, 0.11));
         let base = autumn ? vec3(lum).mul(2.5).mul(color(tint)) : tx.rgb.mul(color(tint));
+        // the street photo's redwoods are a light, yellowish green with sky showing through
+        if (n === 'redwood') base = base.mul(vec3(1.45, 1.4, 1.05));
         // the entry tree is turning: world-space patches of yellow and orange through the green crown
         if (n === 'entry_tree') {
           const f = mx_noise_float(positionWorld.mul(0.35)).mul(0.5).add(0.5);
@@ -214,7 +269,8 @@ export async function loadTrees(group, onProgress) {
       }
       let geo = o.geometry;
       if (isLeaf) {
-        geo = geo.clone(); geo.computeBoundingBox();
+        geo = reshapeLeaves(geo.clone(), LEAF_EDIT[n]);
+        geo.computeBoundingBox();
         const c = new THREE.Vector3(); geo.boundingBox.getCenter(c); const sz = new THREE.Vector3(); geo.boundingBox.getSize(sz);
         c.y -= sz.y * 0.15;
         const P = geo.attributes.position, Nn = geo.attributes.normal, v = new THREE.Vector3(), nn = new THREE.Vector3();
@@ -225,13 +281,32 @@ export async function loadTrees(group, onProgress) {
         }
         Nn.needsUpdate = true;
       }
+      // crown warp: widen the crown away from the trunk axis while the trunk keeps its girth
+      let local = o.matrixWorld;
+      if (CROWN[n]) {
+        geo = toFloat(isLeaf ? geo : geo.clone()); geo.applyMatrix4(o.matrixWorld); local = new THREE.Matrix4();
+        if (!root.userData.axis) {
+          // trunk axis: mean of the bark vertices in the lowest quarter of the tree (the trunk leans, the box centre is off it)
+          let sx = 0, sz = 0, c = 0; const v = new THREE.Vector3();
+          root.traverse(b => { if (!b.isMesh || b.name.includes('leaves') || (b.material && b.material.name.startsWith('leaf'))) return;
+            const A = b.geometry.attributes.position; for (let i = 0; i < A.count; i++) { v.fromBufferAttribute(A, i).applyMatrix4(b.matrixWorld); if (v.y < box.min.y + H * 0.25) { sx += v.x; sz += v.z; c++; } } });
+          root.userData.axis = c ? [sx / c, sz / c] : [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+        }
+        const [cx, cz] = root.userData.axis, R0 = H * 0.04, P = geo.attributes.position;
+        for (let i = 0; i < P.count; i++) {
+          const dx = P.getX(i) - cx, dz = P.getZ(i) - cz, r = Math.hypot(dx, dz);
+          const k = 1 + (CROWN[n] - 1) * Math.min(1, Math.max(0, (r - R0) / (R0 * 2.5)));
+          P.setX(i, cx + dx * k); P.setZ(i, cz + dz * k);
+        }
+        geo.computeBoundingSphere();
+      }
       const im = new THREE.InstancedMesh(geo, mat, list.length);
       const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
       list.forEach((t, i) => {
         const k = t.h / H;
         q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.r);
         s.set(k * t.w, k, k * t.w); p.set(t.x, GY - box.min.y * k - 0.2, t.z);
-        m.compose(p, q, s).multiply(o.matrixWorld);
+        m.compose(p, q, s).multiply(local);
         im.setMatrixAt(i, m);
       });
       im.castShadow = true; im.receiveShadow = true; im.name = n + (isLeaf ? ' leaves' : ' branches');
