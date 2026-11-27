@@ -2,7 +2,7 @@
 import * as THREE from 'three/webgpu';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { texture, uv, color, vec3, float, mix, hash, instanceIndex, positionWorld, mx_noise_float, normalWorld, max, dot } from 'three/tsl';
+import { texture, uv, color, vec3, float, mix, hash, instanceIndex, positionWorld, mx_noise_float, normalWorld, max, dot, smoothstep, transformNormalToView } from 'three/tsl';
 
 export const GY = -1.6;   // ground level relative to the ground floor
 
@@ -26,13 +26,24 @@ export function buildSite(B) {
     strip('concrete', s > 0 ? -46 : -90.5, -600, s > 0 ? -41.5 : -86, 700, 0, 0.065);
   }
   // front walk: exposed aggregate with brick borders, from the gate to the steps
-  strip('aggregate', 22.9, -33.5, 26.1, -3.1, 0, 0.08);
-  strip('brick', 22.5, -33.5, 22.9, -3.1, 0, 0.09); strip('brick', 26.1, -33.5, 26.5, -3.1, 0, 0.09);
+  // gentle S-bend as in the listing photo; poured slabs about 4 ft long with tooled joints, soldier-course brick edging
+  {
+    const z0 = -33.5, z1 = -3.1, N = 60;
+    const cx = z => 24.5 - 0.75 * Math.sin(Math.PI * 2 * (z - z0) / (z1 - z0)) * Math.min(1, (z1 - z) / 6);
+    for (let i = 0; i < N; i++) {
+      const za = z0 + (z1 - z0) * i / N, zb = z0 + (z1 - z0) * (i + 1) / N, xa = cx(za), xb = cx(zb);
+      const len = Math.hypot(xb - xa, zb - za), ang = Math.atan2(xb - xa, zb - za), mx = (xa + xb) / 2, mz = (za + zb) / 2;
+      const joint = (i % 8) === 7;
+      B.obox(G, 'aggregate', mx, GY + 0.045, mz, 3.2, 0.09, len - (joint ? 0.06 : -0.02), ang);
+      for (const sd of [-1, 1]) B.obox(G, 'brick', mx + Math.cos(ang) * sd * 1.82, GY + 0.05, mz - Math.sin(ang) * sd * 1.82, 0.44, 0.1, len + 0.03, ang);
+    }
+    B.obox(G, 'firebox', 24.5, GY + 0.02, (z0 + z1) / 2, 3.3, 0.04, z1 - z0, 0);
+  }
   // driveway (side is a guess, see README) with a curb cut
   strip('concrete', 64, -42, 74, 40, 0, 0.07);
   // planting beds along the front and sides of the house
   const bed = (x0, z0, x1, z1) => strip('mulch', x0, z0, x1, z1, 0, 0.05);
-  bed(-6, -7, 22.5, 0); bed(26.5, -7, 63, 8.6); bed(-6, 0, 0, 48); bed(61.4, 8, 64, 52); bed(-41, -33, -20, -26); bed(30, -33, 64, -29);
+  strip('groundcover', -6, -8.5, 21.6, 0, 0, 0.05); bed(27.4, -7.5, 63, 8.6); bed(-6, 0, 0, 48); bed(61.4, 8, 64, 52); bed(-41, -33, -20, -26); bed(30, -33, 64, -29);
   // back terraces (three brick levels) and curved brick paths
   for (let k = 0; k < 3; k++) strip(k === 2 ? 'grass' : 'brick', -10, 98 + k * 2.6, 44, 118, 0.05, 0.6 * (k + 1));
   for (let k = 0; k < 3; k++) strip('brick', -10 + 0, 98 + k * 2.6 - 0.05, 44, 98 + k * 2.6 + 0.35, 0.6 * (k + 1) - 0.08, 0.6 * (k + 1) + 0.02);
@@ -72,10 +83,10 @@ export function buildFence(group, mats) {
   for (const [a, b] of [[-41.3, 22.3], [26.7, 64]]) for (const y of [0.8, 2.5]) {
     const r = rail.clone(); r.scale.x = b - a; r.position.set((a + b) / 2, GY + y, -33.0); r.castShadow = r.receiveShadow = true; group.add(r);
   }
-  // gate, standing open, as in the listing photo
+  // gate, standing open into the yard, as in the listing photo
   const gate = new THREE.Group();
   for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(merged, mats.picket); p.position.set(k * 0.62 + 0.3, 1.65, 0); p.castShadow = true; gate.add(p); }
-  gate.position.set(26.6, GY, -33.1); gate.rotation.y = -1.9; group.add(gate);
+  gate.position.set(22.3, GY, -33.1); gate.rotation.y = -2.1; group.add(gate);
 }
 
 function mergeGeos(list) {
@@ -95,8 +106,8 @@ const TREES = [
   ['redwood_b', 34, 74, 98],                      // the tall redwood seen above the roof in the listing photo
   ['cedar', 84, -16, 70], ['cedar', 96, 30, 58],   // deodar cedars at the east corner
   ['oak', -24, -6, 52], ['oak', -26, 66, 48], ['oak_m', 80, 86, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
-  ['maple_red', 40, -16, 19], ['maple_red', 50, -9, 16], ['maple_red', 8, -18, 17],
-  ['maple_gold', 19.5, -12, 27],
+  ['maple_red', 40, -16, 19], ['maple_red', 50, -9, 16], ['maple_red', 33.5, -6.5, 15],
+  ['maple_gold', 18.6, -8.5, 29],
   ['oak_m', -24, -40, 34], ['oak_m', 112, -40, 38],
   ['cedar', -110, 160, 64], ['redwood_a', 150, 120, 104], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
 ];
@@ -104,7 +115,14 @@ const BUSHES = [];
 (() => {
   let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const along = (x0, z0, x1, z1, n, h0, h1) => { for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; BUSHES.push([['bush_a', 'bush_b', 'bush_c'][Math.floor(r() * 3)], x0 + (x1 - x0) * t + (r() - 0.5) * 1.5, z0 + (z1 - z0) * t + (r() - 0.5) * 1.2, h0 + r() * (h1 - h0), r() * 6.28]); } };
-  along(-4, -4, 21, -4, 7, 3, 5.5); along(28, -4, 62, -2, 9, 3, 5);
+  // front beds, from the listing photo: big rounded shrubs flanking the steps, one reaching the den window,
+  // a layer of medium shrubs against the foundation and low spreading clumps in front
+  const S = (n, x, z, h, w = 1) => BUSHES.push([n, x, z, h, r() * 6.28, w]);
+  S('bush_b', 17.2, -2.6, 7.2, 1.15); S('bush_a', 14.6, -1.6, 5.2); S('bush_c', 11.5, -2.2, 3.6, 1.2); S('bush_a', 3.2, -2.4, 4.6, 1.1); S('bush_c', 0.6, -1.4, 5.8);
+  S('bush_b', 29.6, -2.8, 4.8, 1.2); S('bush_a', 32.4, -1.2, 4.2); S('bush_c', 35.2, -3.6, 5.6, 1.25); S('bush_b', 38.6, -0.6, 4.4); S('bush_a', 42.4, -2.2, 5.4, 1.2);
+  S('bush_c', 46.5, 3.2, 6.4); S('bush_b', 50.8, 5.6, 5.2, 1.2); S('bush_a', 55.5, 4.4, 6.6); S('bush_c', 60.2, 6.2, 5);
+  along(-4.5, -6.6, 21, -6.2, 11, 1.1, 1.8); along(27.5, -6.6, 62, -5.8, 12, 1.2, 2.2);
+  for (const b of BUSHES.slice(-23)) b[5] = 1.8 + r() * 0.8;   // low clumps spread wide
   along(-3, 2, -3, 46, 10, 4, 7); along(63, 10, 63, 50, 8, 4, 7);
   along(-38, -30, -22, -30, 4, 3, 4.5); along(32, -31, 62, -31, 6, 2.5, 4);
   along(-40, 0, -40, 120, 16, 6, 10);       // hedge along Webster
@@ -124,7 +142,7 @@ export async function loadTrees(group, onProgress) {
   const want = [...new Set([...TREES, ...BUSHES].map(t => t[0]))];
   const models = {};
   await Promise.all(want.map(async n => { models[n] = (await loader.loadAsync('assets/trees/' + n + '.glb')).scene; onProgress && onProgress(n); }));
-  const all = [...TREES.map(t => ({ n: t[0], x: t[1], z: t[2], h: t[3], r: (t[1] * 7.3 + t[2] * 3.1) % 6.28 })), ...BUSHES.map(b => ({ n: b[0], x: b[1], z: b[2], h: b[3], r: b[4] }))];
+  const all = [...TREES.map(t => ({ n: t[0], x: t[1], z: t[2], h: t[3], r: (t[1] * 7.3 + t[2] * 3.1) % 6.28, w: 1 })), ...BUSHES.map(b => ({ n: b[0], x: b[1], z: b[2], h: b[3], r: b[4], w: b[5] || 1 }))];
   for (const n of want) {
     const list = all.filter(t => t.n === n);
     const root = models[n];
@@ -158,7 +176,7 @@ export async function loadTrees(group, onProgress) {
       list.forEach((t, i) => {
         const k = t.h / H;
         q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.r);
-        s.set(k, k, k); p.set(t.x, GY - box.min.y * k - 0.2, t.z);
+        s.set(k * t.w, k, k * t.w); p.set(t.x, GY - box.min.y * k - 0.2, t.z);
         m.compose(p, q, s).multiply(o.matrixWorld);
         im.setMatrixAt(i, m);
       });
@@ -247,3 +265,82 @@ function addInstances(group, geo, mat, list) {
   im.castShadow = false; im.receiveShadow = true; group.add(im);
 }
 const winTrim = new THREE.BoxGeometry(3.6, 4.8, 0.24);
+
+// ---------- lawn blades and fallen leaves ----------
+// Instanced clumps of grass blades over the front lawn; they fade out (shrink into the turf texture)
+// a long way from the house so only the near lawn pays for them.
+export function buildGrass(group) {
+  let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // one clump: 14 tapered blades (one triangle each), normals mostly up so they shade like the turf
+  const P = [], N = [], U = [];
+  for (let b = 0; b < 18; b++) {
+    const a = r() * 6.28, d = Math.sqrt(r()) * 0.2, x = Math.cos(a) * d, z = Math.sin(a) * d;
+    const h = 0.1 + r() * 0.13, w = 0.012 + r() * 0.01, ra = r() * 6.28, lean = 0.02 + r() * 0.06, la = r() * 6.28;
+    const cx = Math.cos(ra) * w, cz = Math.sin(ra) * w;
+    P.push(x - cx, 0, z - cz, x + cx, 0, z + cz, x + Math.cos(la) * lean, h, z + Math.sin(la) * lean);
+    const nx = Math.sin(ra) * 0.35, nz = -Math.cos(ra) * 0.35, l = Math.hypot(nx, 1, nz);
+    for (let k = 0; k < 3; k++) N.push(nx / l, 1 / l, nz / l);
+    U.push(0, 0, 1, 0, 0.5, 1);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+  const mat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, roughness: 0.7, metalness: 0 });
+  // shade every blade with the turf normal (tilted a little per blade) so back faces do not go black
+  mat.normalNode = transformNormalToView(vec3(hash(instanceIndex).sub(0.5).mul(0.5), 1, uv().y.sub(0.5).mul(0.3)).normalize());
+  const macro = mx_noise_float(positionWorld.xz.mul(0.09)).mul(0.5).add(0.5);
+  const fine = hash(instanceIndex.add(3));
+  const root = color('#3A5718'), tip = mix(color('#86AE34'), color('#B2C653'), macro);
+  const dry = color('#A8A25C');
+  let col = mix(root, tip, uv().y.pow(0.8));
+  col = mix(col, dry, smoothstep(0.62, 0.9, macro).mul(uv().y).mul(0.55));
+  mat.colorNode = col.mul(fine.mul(0.35).add(0.8));
+  // areas: front lawn either side of the walk, and the parkway strip
+  const rects = [[-40.5, -32.9, 21.8, -8.6], [27.2, -32.9, 64, -7.6], [21.8, -32.9, 27.2, -30.5], [-40, -41.5, 64, -38.2]];
+  const walkX = z => 24.5 - 0.75 * Math.sin(Math.PI * 2 * (z + 33.5) / 30.4) * Math.min(1, (-3.1 - z) / 6);
+  const pts = [];
+  for (const [x0, z0, x1, z1] of rects) {
+    const step = 0.36;
+    for (let z = z0; z < z1; z += step) for (let x = x0; x < x1; x += step) {
+      const px = x + (r() - 0.5) * step, pz = z + (r() - 0.5) * step;
+      if (z > -33.5 && Math.abs(px - walkX(pz)) < 2.15) continue;
+      pts.push(px, pz);
+    }
+  }
+  const n = pts.length / 2;
+  const im = new THREE.InstancedMesh(geo, mat, n);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < n; i++) {
+    const x = pts[i * 2], z = pts[i * 2 + 1];
+    // patchy height: longer tufts in low-frequency patches
+    const patch = 0.75 + 0.5 * (0.5 + 0.5 * Math.sin(x * 0.37 + Math.cos(z * 0.29) * 2.1) * Math.cos(z * 0.23 - x * 0.11));
+    q.setFromAxisAngle(up, r() * 6.28); const k = patch * (0.75 + r() * 0.5);
+    sc.set(1.1 + r() * 0.4, k, 1.1 + r() * 0.4); p.set(x, GY - 0.01, z);
+    m.compose(p, q, sc); im.setMatrixAt(i, m);
+  }
+  im.castShadow = false; im.receiveShadow = true; im.name = 'Lawn blades';
+  group.add(im);
+}
+
+export function buildLeaves(group) {
+  let seed = 5; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const t = new THREE.TextureLoader().load('assets/trees/leaf_oak.webp'); t.colorSpace = THREE.SRGBColorSpace;
+  const geo = new THREE.PlaneGeometry(0.32, 0.32); geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshStandardNodeMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 });
+  const tx = texture(t, uv());
+  const h = hash(instanceIndex.add(17));
+  const lum = dot(tx.rgb, vec3(0.3, 0.59, 0.11)).mul(2.2);
+  mat.colorNode = vec3(lum).mul(mix(mix(color('#B8501E'), color('#D89A32'), h), color('#6B4A2E'), hash(instanceIndex.add(5)).greaterThan(0.6).select(float(0.7), float(0))));
+  mat.opacityNode = tx.a;
+  const spots = [];
+  const walkX = z => 24.5 - 0.75 * Math.sin(Math.PI * 2 * (z + 33.5) / 30.4) * Math.min(1, (-3.1 - z) / 6);
+  for (let i = 0; i < 260; i++) { const z = -33 + r() * 30; spots.push([walkX(z) + (r() - 0.5) * 3.6, 0.1, z]); }
+  for (let i = 0; i < 520; i++) { const a = r() * 6.28, d = Math.sqrt(r()) * 16; spots.push([33.5 + Math.cos(a) * d, 0.03, -6.5 + Math.sin(a) * d * 0.7]); }
+  for (let i = 0; i < 380; i++) spots.push([-6 + r() * 70, 0.07, -8 + r() * 8]);
+  const im = new THREE.InstancedMesh(geo, mat, spots.length);
+  const m = new THREE.Matrix4(), e = new THREE.Euler();
+  spots.forEach(([x, y, z], i) => { e.set((r() - 0.5) * 0.5, r() * 6.28, (r() - 0.5) * 0.5); m.makeRotationFromEuler(e); const k = 0.7 + r() * 0.6; m.scale(new THREE.Vector3(k, k, k)); m.setPosition(x, GY + y + 0.04, z); im.setMatrixAt(i, m); });
+  im.receiveShadow = true; im.castShadow = false; im.name = 'Fallen leaves';
+  group.add(im);
+}

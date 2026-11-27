@@ -11,7 +11,7 @@ import { ROOMS, FY } from './data.js';
 import { Batcher } from './geo.js';
 import { makeMaterials, neighborMats, pending } from './mats.js';
 import { buildHouse } from './house.js';
-import { buildSite, buildFence, loadTrees, buildNeighbors, GY } from './site.js';
+import { buildSite, buildFence, loadTrees, buildNeighbors, buildGrass, buildLeaves, GY } from './site.js';
 
 const $ = s => document.querySelector(s);
 const img = n => 'img/' + n + '.jpg';
@@ -24,8 +24,8 @@ async function start() {
   const renderer = new THREE.WebGPURenderer({ antialias: false, reversedDepthBuffer: true, forceWebGL: params.has('webgl') });
   renderer.setPixelRatio(Math.min(devicePixelRatio, params.has('hq') ? 2 : 1.5));
   renderer.setSize(innerWidth, innerHeight);
-  renderer.toneMapping = THREE.AgXToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = +(params.get('exp') || 0.82);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   $('#app').appendChild(renderer.domElement);
@@ -38,9 +38,9 @@ async function start() {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.5, 4000);
   const orbit = new OrbitControls(camera, renderer.domElement);
-  orbit.enableDamping = true; orbit.dampingFactor = 0.07; orbit.maxPolarAngle = Math.PI * 0.495; orbit.minDistance = 8; orbit.maxDistance = 520;
+  orbit.enableDamping = true; orbit.dampingFactor = 0.07; orbit.maxPolarAngle = Math.PI * 0.51; orbit.minDistance = 8; orbit.maxDistance = 520;
   const SHOTS = {
-    street: { pos: [24.5, 3.6, -46], tgt: [24, 9, 10], fov: 58 },
+    street: { pos: [23.6, 3.6, -38], tgt: [22.7, 4.3, 10], fov: 56 },   // registered to listing photo zillow-01 (iPhone 1x, at the open gate)
     hero: { pos: [58, 62, -118], tgt: [26, 5, 18], fov: 36 },
     aerial: { pos: [30, 230, -60], tgt: [30, 0, 30], fov: 38 },
     garden: { pos: [10, 6, 112], tgt: [30, 10, 30], fov: 50 },
@@ -53,7 +53,8 @@ async function start() {
   // House frame: north = (0.779, -0.627), east = (0.626, 0.779) in x/z (from the OSM outline fit).
   const N = new THREE.Vector2(0.779, -0.627), E = new THREE.Vector2(0.626, 0.779);
   const sun = new THREE.DirectionalLight('#FFE9CF', 4.2);
-  const TIMES = { morning: [128, 24, '#FFF1DD', 3.6], afternoon: [228, 19, '#FFE5C4', 4.2], golden: [240, 8.5, '#FFC98F', 3.4], noon: [180, 33, '#FFF6EA', 4.6] };
+  // afternoon matches the listing photo: low sun from behind the right shoulder of the street camera, raking across the front
+  const TIMES = { morning: [128, 24, '#FFF1DD', 5.2], afternoon: [251, 12, '#FFDDB0', 6.2], golden: [247, 5, '#FFBE7A', 5.0], noon: [180, 33, '#FFF4E4', 6.0] };
   const sunDir = new THREE.Vector3();
   function setTime(k) {
     const [az, el, col, inten] = TIMES[k];
@@ -61,14 +62,17 @@ async function start() {
     const h = N.clone().multiplyScalar(Math.cos(a)).add(E.clone().multiplyScalar(Math.sin(a)));
     sunDir.set(h.x * Math.cos(e), Math.sin(e), h.y * Math.cos(e)).normalize();
     sun.color.set(col); sun.intensity = inten;
-    sun.position.copy(sunDir).multiplyScalar(400).add(new THREE.Vector3(30, 0, 30));
-    sun.target.position.set(30, 0, 30);
+    sun.position.copy(sunDir).multiplyScalar(400).add(new THREE.Vector3(28, 0, 20));
+    sun.target.position.set(28, 0, 20);
+    // cooler, dimmer sky fill when the sun is low so shade reads blue and sunlit surfaces carry the image
+    scene.environmentIntensity = 0.32 + 0.012 * el;
     if (skyTex) alignSky();
     document.querySelectorAll('[data-time]').forEach(b => b.classList.toggle('on', b.dataset.time === k));
   }
   sun.castShadow = true;
-  Object.assign(sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 50, far: 900 });
-  sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.06; sun.shadow.radius = 3;
+  // tight frustum around the lot (house, front yard, near garden) so leaf and branch shadows stay crisp
+  Object.assign(sun.shadow.camera, { left: -105, right: 105, top: 105, bottom: -105, near: 150, far: 700 });
+  sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0002; sun.shadow.normalBias = 0.04; sun.shadow.radius = 1.5;
   scene.add(sun, sun.target);
 
   let skyTex = null, skySunAz = 0;
@@ -89,7 +93,7 @@ async function start() {
     const u = (bi % width) / width; skySunAz = (u - 0.5) * Math.PI * 2 * -1 + Math.PI / 2;
   }
   scene.background = skyTex; scene.environment = skyTex;
-  scene.environmentIntensity = 0.85; scene.backgroundIntensity = 1.0;
+  scene.backgroundIntensity = 1.0;
   scene.fog = new THREE.FogExp2('#B7C8D6', 0.0009);
   setTime(params.get('time') || 'afternoon');
 
@@ -117,6 +121,7 @@ async function start() {
   B.build(G, M);
   G.furn0.visible = G.furn1.visible = false;
   buildFence(G.garden, M);
+  buildGrass(G.garden); buildLeaves(G.garden);
 
   // floors: one mesh per room so rooms can be picked and highlighted
   const floorMeshes = [], labels = [];
@@ -244,7 +249,7 @@ async function start() {
     G.roof.visible = roofOn() && v !== 'g' && v !== 'u';
     G.ceil.visible = (G.roof.visible && v === 'all') || walking;
     const enclosed = G.roof.visible || walking;
-    M.interior.forEach(k => { M[k].envMapIntensity = enclosed ? 0.28 : 0.85; });
+    M.interior.forEach(k => { M[k].envMapIntensity = enclosed ? 0.55 : 1; });
     if (v !== 'all' && !walking) $('#tLabels').checked = true;
     updateLabels();
   }

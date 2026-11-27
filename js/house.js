@@ -19,7 +19,7 @@ const onOutline = (kind, at, m) => {
 // ---------- roof planes ----------
 const PARTS = [
   { rects: [[-1.2, 7.2, 42.4, 50.9], [42.4, 13.0, 62.6, 50.9]], ridge: 'x', at: 28, top: 23.95, s: 0.65, mat: 'shingles', main: true },
-  { rects: [[-1.3, -1.3, 19.7, 27]], ridge: 'z', at: 9.2, top: 19.7, s: 1.05, mat: 'shingles' },
+  { rects: [[-1.9, -1.9, 20.3, 27]], ridge: 'z', at: 9.2, top: 14.9, s: 0.56, mat: 'shingles' },
   ...DORMERS.map(c => { const zf = (c > 42.4 ? 14.2 : 12) - 0.5; return { rects: [[c - 3.7, zf, c + 3.7, zf + 11.5]], ridge: 'z', at: c, top: 19.6, s: 0.6, mat: 'shingles', dormer: { c, zf } }; }),
   { rects: [[18.4, 0.2, 30.8, 8.6]], shed: { at0: 0.2, y0: 8.7, s: 0.12 }, mat: 'shingles' },
   { rects: [[22.6, 48.3, 47.9, 58.4]], flat: 9.75, mat: 'roofSheet' },
@@ -53,7 +53,7 @@ function buildRoof(B) {
   const xv = [9.2, ...DORMERS, ...OUTLINE.map(p => p[0])], zv = [28, ...OUTLINE.map(p => p[1])];
   PARTS.forEach(p => p.rects.forEach(r => { xv.push(r[0], r[2]); zv.push(r[1], r[3]); }));
   CUTS.forEach(r => { xv.push(r[0], r[2]); zv.push(r[1], r[3]); });
-  const xs = lines(xv, -1.3, 62.6, 0.25), zs = lines(zv, -1.3, 58.4, 0.25);
+  const xs = lines(xv, -1.9, 62.6, 0.25), zs = lines(zv, -1.9, 58.4, 0.25);
   const NX = xs.length - 1, NZ = zs.length - 1;
   // per cell: parts list, height function, pure plane key
   const cells = new Array(NX * NZ);
@@ -162,7 +162,11 @@ function windowAssembly(B, group, kind, at, dir, s, e, y0, sill, head, ext, inTr
   const sashKey = 'sash';
   L(sashKey, s, s + fr, wmid - fd, wmid + fd, sill, head); L(sashKey, e - fr, e, wmid - fd, wmid + fd, sill, head);
   L(sashKey, s + fr, e - fr, wmid - fd, wmid + fd, sill, sill + fr); L(sashKey, s + fr, e - fr, wmid - fd, wmid + fd, head - fr, head);
-  if (type === 'win') {
+  if (type === 'casement') {
+    const m = (s + e) / 2;
+    L(sashKey, m - 0.1, m + 0.1, wmid - fd, wmid + fd * 0.4, sill + fr, head - fr);
+    L(sashKey, s + fr, e - fr, wmid - 0.05, wmid + 0.05, head - 1.15, head - 1.08);
+  } else if (type === 'win') {
     const m = (sill + head) / 2;
     L(sashKey, s + fr, e - fr, wmid - fd, wmid + fd * 0.2, m - 0.07, m + 0.07);
   } else if (type === 'french') {
@@ -184,29 +188,40 @@ function windowAssembly(B, group, kind, at, dir, s, e, y0, sill, head, ext, inTr
   if (sill > 0.1) { L(inTrim, s - 0.35, e + 0.35, wi + dir * 0.02, wi - dir * 0.16, sill - 0.08, sill); L(inTrim, s - 0.3, e + 0.3, i0, i1, sill - 0.45, sill - 0.08); }
 }
 // A window applied on a face that has no opening behind it (dormer fronts, gable ends).
-export function appliedWindow(B, kind, at, dir, s, e, y0, y1, group = 'roof') {
+export function appliedWindow(B, kind, at, dir, s, e, y0, y1, group = 'roof', plain = false) {
   const L = (key, a0, a1, w0, w1, b, t) => wallBox(B, group, kind, key, a0, a1, w0, w1, b, t);
   const o = at, d = dir;
   L('glassDark', s, e, o, o + d * 0.04, y0, y1);
   const fr = 0.16;
   L('sash', s, s + fr, o, o + d * 0.1, y0, y1); L('sash', e - fr, e, o, o + d * 0.1, y0, y1);
   L('sash', s, e, o, o + d * 0.1, y0, y0 + fr); L('sash', s, e, o, o + d * 0.1, y1 - fr, y1);
-  L('sash', s, e, o, o + d * 0.08, (y0 + y1) / 2 - 0.07, (y0 + y1) / 2 + 0.07);
+  if (!plain) L('sash', s, e, o, o + d * 0.08, (y0 + y1) / 2 - 0.07, (y0 + y1) / 2 + 0.07);
   L('trim', s - 0.35, s, o, o + d * 0.14, y0 - 0.1, y1 + 0.05); L('trim', e, e + 0.35, o, o + d * 0.14, y0 - 0.1, y1 + 0.05);
   L('trim', s - 0.45, e + 0.45, o, o + d * 0.16, y1, y1 + 0.45); L('trim', s - 0.45, e + 0.45, o, o + d * 0.26, y0 - 0.14, y0);
 }
-function shutters(B, kind, at, dir, s, e, y0, y1) {
-  const o = at + dir * 0.1;
-  const w = (e - s) * 0.5 + 0.1;
-  for (const [a0, a1] of [[s - 0.35 - w, s - 0.35], [e + 0.35, e + 0.35 + w]]) {
-    wallBox(B, 'f0', kind, 'trim', a0, a1, o, o + dir * 0.12, y0, y1);
-    const n = Math.floor((y1 - y0) / 0.25);
-    for (let k = 1; k < n; k++) wallBox(B, 'f0', kind, 'trim', a0 + 0.12, a1 - 0.12, o + dir * 0.12, o + dir * 0.17, y0 + k * 0.25 - 0.03, y0 + k * 0.25 + 0.03);
+function shutters(B, kind, at, dir, s, e, y0, y1, w = 1.45) {
+  const o = at + dir * 0.08;
+  for (const [a0, a1] of [[s - 0.3 - w, s - 0.3], [e + 0.3, e + 0.3 + w]]) {
+    const st = 0.17, mid = (y0 + y1) / 2;
+    // stiles and rails
+    wallBox(B, 'f0', kind, 'trim', a0, a0 + st, o, o + dir * 0.13, y0, y1); wallBox(B, 'f0', kind, 'trim', a1 - st, a1, o, o + dir * 0.13, y0, y1);
+    for (const y of [y0, mid - 0.09, y1 - 0.2]) wallBox(B, 'f0', kind, 'trim', a0 + st, a1 - st, o, o + dir * 0.13, y, y + 0.2);
+    wallBox(B, 'f0', kind, 'glassDark', a0 + st, a1 - st, o, o + dir * 0.02, y0, y1);
+    // louvers: thin slats tilted down and out so each one catches light on top and drops a shadow line
+    const len = a1 - a0 - 2 * st, ca = (a0 + a1) / 2;
+    for (let y = y0 + 0.28; y < y1 - 0.24; y += 0.16) {
+      if (Math.abs(y - mid) < 0.16) continue;
+      const wc = o + dir * 0.065;
+      if (kind === 'h') B.obox('f0', 'trim', ca, y, wc, len, 0.025, 0.15, 0, dir * 0.75, 0);
+      else B.obox('f0', 'trim', wc, y, ca, 0.15, 0.025, len, 0, 0, -dir * 0.75);
+    }
   }
 }
-
 // ---------- walls ----------
-function spec(type, H) {
+// den front window [s, e, sill, head]: a tall casement pair with a central mullion, narrower than the data default
+const DEN_WIN = [7.05, 11.35, 2.3, 7.0];
+function spec(type, H, o) {
+  if (type === 'casement') return { sill: o.sill, head: o.head, glass: true };
   if (type === 'win') return { sill: 3, head: Math.min(6.8, H - 0.4), glass: true };
   if (type === 'french') return { sill: 0, head: Math.min(7.4, H - 0.3), glass: true };
   if (type === 'open') return { sill: 0, head: Math.min(7.6, H - 0.3) };
@@ -219,6 +234,7 @@ function wallLine(B, f, kind, at, a0, a1, inset, wallKey) {
   const inFace = { pz: 'nz', nz: 'pz', px: 'nx', nx: 'px' }[outFace];
   const y0 = FY[f], hfn = HFN[f];
   const ops = OPEN.filter(o => o[0] === f && o[1] === kind && Math.abs(o[2] - at) < 0.01 && o[3] > a0 && o[3] < a1).map(o => ({ c: o[3], w: o[4], type: o[5] }));
+  if (f === 0 && kind === 'h' && Math.abs(at) < 0.01) ops.forEach(o => { if (o.type === 'win') { o.c = (DEN_WIN[0] + DEN_WIN[1]) / 2; o.w = DEN_WIN[1] - DEN_WIN[0]; o.type = 'casement'; o.sill = DEN_WIN[2]; o.head = DEN_WIN[3]; } });
   const pts = new Set([a0, a1]);
   ops.forEach(o => { pts.add(Math.max(a0, o.c - o.w / 2)); pts.add(Math.min(a1, o.c + o.w / 2)); });
   if (f === 1) for (let v = Math.ceil(a0); v < a1; v++) pts.add(v);
@@ -239,7 +255,7 @@ function wallLine(B, f, kind, at, a0, a1, inset, wallKey) {
       : B.box(group, key, at, s, at - dir * T, e, y0 + b, y0 + t, skip);
     const base = (a, b2) => { if (b2 - a > 0.05) wallBox(B, group, kind, baseKey, a, b2, at - dir * T, at - dir * (T + 0.05), y0, y0 + 0.42); };
     if (!o) { put(0, H); if (H > 1) base(s, e); continue; }
-    const sp = spec(o.type, H);
+    const sp = spec(o.type, H, o);
     if (sp.sill > 0) put(0, sp.sill);
     if (H > sp.head) put(sp.head, H);
     if (sp.sill > 0 && H > 1) base(s, e);
@@ -351,9 +367,9 @@ export function buildHouse(B, floorDefs) {
   for (const [a, b] of [[20.1, 21.15], [24.85, 25.9]]) { B.box(F0, 'sash', a, 8.55, b, 8.7, 0, 7); B.box(F0, 'glass', a + 0.15, 8.5, b - 0.15, 8.75, 0.6, 6.7); }
   B.box(F0, 'trim', 19.8, 8.5, 26.2, 8.7, 7, 7.6);
   // shutters on the big front window of the den wing
-  shutters(B, 'h', 0, -1, 6.7, 11.7, 3, 6.8);
-  // attic window in the den gable, dormer windows
-  appliedWindow(B, 'h', -0.035, -1, 7.6, 10.8, 12.0, 14.6);
+  shutters(B, 'h', 0, -1, DEN_WIN[0], DEN_WIN[1], DEN_WIN[2], DEN_WIN[3]);
+  // small dark attic window high in the den gable, dormer windows
+  appliedWindow(B, 'h', -0.035, -1, 7.8, 10.6, 10.5, 11.8, 'roof', true);
   DORMERS.forEach(c => { const zf = (c > 42.4 ? 14.2 : 12) - 0.5; appliedWindow(B, 'h', zf - 0.03, -1, c - 1.7, c + 1.7, 14.6 + (c > 42.4 ? 0.6 : 0), 16.9 + (c > 42.4 ? 0.3 : 0)); });
   // gable-end windows upstairs (northeast)
   // chimney

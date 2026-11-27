@@ -78,28 +78,40 @@ function siding() {
   return m;
 }
 
-// Asphalt 3-tab shingles in weathered brown. u runs along the eave, v runs up the slope.
+// Asphalt laminate shingles in weathered brown-grey. u runs along the eave, v runs up the slope (true slope distance).
+// Courses are 5" deep; each tab gets its own tone and a slight tilt so the roof reads as fine horizontal lines
+// with a granular surface instead of a flat painted plane.
 function shingles() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
   const n = normalWorld, p = positionWorld;
   const hz = length(n.xz).max(0.05);
   const u = select(abs(n.x).greaterThan(abs(n.z)), p.z, p.x);
   const v = p.y.div(hz);
-  const E = 0.4167, Wt = 1.0;
+  const E = 0.4167;
   const row = floor(v.div(E));
   const fv = fract(v.div(E));
-  const tu = u.add(row.mul(0.5)).div(Wt);
+  const rowOff = fract(row.mul(0.618)).mul(0.9);
+  const tw = hash(row.mul(13.7).add(1.3)).mul(0.5).add(0.85);
+  const tu = u.add(rowOff).div(tw);
   const tab = floor(tu), fu = fract(tu);
-  const h1 = hash(vec2(tab, row).add(0.5)), h2 = hash(vec2(row, tab.mul(1.7)).add(3.1));
-  const gran = mx_noise_float(p.mul(38)).mul(0.5).add(0.5);
-  const streak = mx_fractal_noise_float(vec3(u.mul(0.15), v.mul(0.04), 0), 3).mul(0.5).add(0.5);
-  let col = mix(color('#2E241E'), color('#45372D'), h1);
-  col = mix(col, color('#211A16'), step(0.86, h2).mul(0.7));
-  col = col.mul(float(0.78).add(gran.mul(0.36))).mul(mix(float(0.85), float(1.08), streak));
-  const slot = smoothstep(0.0, 0.012, fu).mul(smoothstep(1.0, 0.988, fu));
-  const shadow = mix(float(0.42), float(1), smoothstep(0.0, 0.09, fv));
-  m.colorNode = col.mul(shadow).mul(mix(float(0.55), float(1), slot.max(step(0.55, fv))));
-  m.roughnessNode = float(0.86).add(gran.mul(0.1));
+  const h1 = hash(tab.mul(127.1).add(row.mul(311.7)).add(0.5)), h2 = hash(tab.mul(269.5).add(row.mul(183.3)).add(4.1));
+  const gran = mx_noise_float(p.mul(42)).mul(0.5).add(0.5);
+  const gran2 = mx_noise_float(p.mul(11)).mul(0.5).add(0.5);
+  const streak = mx_fractal_noise_float(vec3(u.mul(0.09), v.mul(0.05), 0), 3).mul(0.5).add(0.5);
+  let col = mix(color('#4A3D35'), color('#6A5A4F'), h1);
+  col = mix(col, color('#3A302B'), step(0.8, h2).mul(0.8));
+  col = col.mul(float(0.74).add(gran.mul(0.34)).add(gran2.mul(0.1))).mul(mix(float(0.86), float(1.1), streak));
+  // the butt edge of the course above throws a thin shadow line onto the top of this course
+  const shadow = mix(float(0.5), float(1), smoothstep(0.0, 0.1, fv));
+  const slot = smoothstep(0.0, 0.015, fu).mul(smoothstep(1.0, 0.985, fu));
+  m.colorNode = col.mul(shadow).mul(mix(float(0.62), float(1), slot.max(step(0.6, fv))));
+  // downslope tangent; shingles are thicker at the butt, so the surface tilts slightly downhill, the butt faces downhill
+  const t = vec3(n.x.mul(n.y), hz.mul(hz).negate(), n.z.mul(n.y)).normalize();
+  const jitter = vec3(mx_noise_float(p.mul(37).add(3.1)), mx_noise_float(p.mul(37).add(7.7)), mx_noise_float(p.mul(37).add(9.3))).mul(0.12);
+  const tilt = n.add(t.mul(h1.mul(0.06).add(0.05))).add(jitter);
+  const butt = n.mul(0.5).add(t);
+  m.normalNode = transformNormalToView(select(fv.lessThan(0.06), butt, tilt).normalize());
+  m.roughnessNode = float(0.84).add(gran.mul(0.12));
   return m;
 }
 
@@ -153,10 +165,11 @@ export function makeMaterials() {
     brickWall: pbr('brick_wall_02', { scale: 6, rough: 1 }),
     porchBrick: pbr('red_brick_03', { scale: 4, tint: '#B5B1AA', rough: 1 }),
     concrete: pbr('concrete_pavement', { scale: 10, tint: '#E8E3DA', antiTile: true }),
-    aggregate: pbr('gravel_embedded_concrete', { scale: 4, tint: '#E2D9CB' }),
+    aggregate: pbr('gravel_embedded_concrete', { scale: 2.5, tint: '#FFF4E2', rough: 0.95 }),
     asphalt: pbr('asphalt_02', { scale: 14, tint: '#8E8E8E', antiTile: true }),
     grass: pbr('grass_ground', { scale: 9, antiTile: true, colorFn: lawn, rough: 1, normalScale: 1.4 }),
-    mulch: pbr('forest_leaves_02', { scale: 6, tint: '#B89A84', antiTile: true }),
+    mulch: pbr('forest_leaves_02', { scale: 6, tint: '#9A8170', antiTile: true }),
+    groundcover: pbr('forest_leaves_02', { scale: 3, tint: '#7E9A5A', antiTile: true, colorFn: c => c.mul(vec3(0.55, 0.85, 0.42)) }),
     gravel: pbr('gravel_embedded_concrete', { scale: 6, tint: '#CFC6B6' }),
     roofSheet: paint('#55524D', 0.9),
     deck: new THREE.MeshStandardNodeMaterial({ color: '#8C8A84', roughness: 0.8 }),
