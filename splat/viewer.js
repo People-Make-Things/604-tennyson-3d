@@ -145,6 +145,7 @@ async function openScene(name, opts = {}) {
   const token = ++loadToken;
   cur = s;
   [...sceneBar.children].forEach(b => b.classList.toggle('on', b.dataset.name === s.name));
+  sceneBar.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (!opts.keepHash) history.replaceState(null, '', '#' + s.name);
   const root = document.documentElement.style;
   root.setProperty('--sky-top', s.sky.top); root.setProperty('--sky-mid', s.sky.mid); root.setProperty('--sky-bottom', s.sky.bottom);
