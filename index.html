@@ -4,90 +4,114 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>604 Tennyson Ave | 3D house model</title>
+<meta name="description" content="Real-time 3D model of 604 Tennyson Ave, Palo Alto: 5 bed, 2.5 bath, about 3,078 sq ft, on the corner of Tennyson Ave and Webster St.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preload" href="assets/hdri/sky_2k.hdr" as="fetch" crossorigin>
 <style>
-:root{
-  --sage:#DCE3D5; --paper:#F5F6F1; --ink:#1E2B22; --muted:#5E6B60; --door:#A3302A; --line:#C3CCBD;
-}
+:root{ --glass:rgba(250,250,247,.82); --ink:#1B241E; --muted:#5B655D; --line:rgba(30,43,34,.12); --accent:#9E2B25; }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--sage);color:var(--ink);font:15px/1.45 "Schibsted Grotesk",system-ui,sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;background:#BFD0DC;color:var(--ink);font:14px/1.45 "Schibsted Grotesk",system-ui,sans-serif}
 #app{position:fixed;inset:0}
 #app canvas{display:block}
-.lbl{font:500 12px/1 "Schibsted Grotesk",sans-serif;color:var(--ink);background:rgba(245,246,241,.88);padding:4px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;transform:translateY(-6px)}
-.lbl.out{background:rgba(220,227,213,.85);color:#3B4A3E}
-.lbl.sel{background:var(--door);color:#fff}
-nav{position:fixed;left:16px;top:16px;bottom:16px;width:268px;background:rgba(245,246,241,.94);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px;overflow:auto;display:flex;flex-direction:column;gap:16px}
-h1{font-size:22px;line-height:1.1;margin:0;font-weight:700;letter-spacing:-.01em}
-.sub{margin:4px 0 0;color:var(--muted);font-size:13px}
+.lbl{font:500 12px/1 "Schibsted Grotesk",sans-serif;color:var(--ink);background:rgba(250,250,247,.9);padding:5px 8px;border-radius:5px;white-space:nowrap;pointer-events:none;transform:translateY(-6px);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.lbl.out{background:rgba(236,240,232,.86);color:#334036}
+.lbl.street{background:rgba(30,36,32,.55);color:#fff;letter-spacing:.04em;text-transform:uppercase;font-size:10.5px}
+.lbl.sel{background:var(--accent);color:#fff}
+nav{position:fixed;left:14px;top:14px;bottom:14px;width:272px;background:var(--glass);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid rgba(255,255,255,.5);border-radius:14px;padding:18px 16px 14px;overflow:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 10px 30px rgba(20,30,25,.14)}
+h1{font-size:22px;line-height:1.1;margin:0;font-weight:700;letter-spacing:-.015em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:12.5px}
+.cap{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.seg button,.actions button,.rooms button{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:7px 8px;cursor:pointer;text-align:left}
+.seg.four{grid-template-columns:repeat(4,1fr)}
+.seg button,.actions button,.actions a,.rooms button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:rgba(255,255,255,.75);color:var(--ink);border-radius:7px;padding:7px 8px;cursor:pointer;text-align:left;text-decoration:none}
+.seg.four button{text-align:center;padding:7px 2px}
 .seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.toggles{display:grid;gap:6px;font-size:13px}
-.toggles label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12.5px}
+.toggles label{display:flex;gap:7px;align-items:center;cursor:pointer}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.actions button.primary{background:var(--door);border-color:var(--door);color:#fff}
-.rooms h2{font-size:13px;font-weight:700;margin:10px 0 6px}
+.actions .primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.rooms h2{font-size:12.5px;font-weight:700;margin:10px 0 4px}
 .rooms h2:first-child{margin-top:0}
-.rooms ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.rooms ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
 .rooms button{width:100%;border-color:transparent;background:transparent;padding:4px 6px;display:flex;justify-content:space-between}
 .rooms button span{color:var(--muted)}
 .rooms button:hover,.rooms button.on{background:#fff;border-color:var(--line)}
-.facts{font-size:13px}.facts summary{cursor:pointer;font-weight:500}.facts ul{margin:6px 0 0;padding-left:16px;color:var(--muted);display:grid;gap:2px}
-.note{font-size:12px;color:var(--muted);margin:0;border-top:1px solid var(--line);padding-top:10px}
-button:focus-visible,input:focus-visible{outline:2px solid var(--door);outline-offset:2px}
-#panel{position:fixed;right:16px;top:16px;bottom:16px;width:340px;background:rgba(245,246,241,.97);border:1px solid var(--line);border-radius:10px;padding:18px;overflow:auto}
+.facts{font-size:12.5px}.facts summary{cursor:pointer;font-weight:500}.facts ul{margin:6px 0 0;padding-left:16px;color:var(--muted);display:grid;gap:2px}
+.note{font-size:11.5px;color:var(--muted);margin:0;border-top:1px solid var(--line);padding-top:10px}
+.note a{color:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#panel{position:fixed;right:14px;top:14px;bottom:14px;width:340px;background:rgba(250,250,247,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.5);border-radius:14px;padding:18px;overflow:auto;box-shadow:0 10px 30px rgba(20,30,25,.14)}
 #panel[hidden]{display:none}
 #panel .x{position:absolute;right:10px;top:10px;border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:var(--muted)}
-#panel .fl{margin:0;color:var(--muted);font-size:13px}
+#panel .fl{margin:0;color:var(--muted);font-size:12.5px}
 #panel h2{margin:2px 0 4px;font-size:21px;line-height:1.15}
-#panel .size{margin:0 0 10px;font-size:13px;color:var(--muted)}
+#panel .size{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
 #panel .desc{margin:0 0 10px}
-#panel .idea{margin:0 0 12px;padding:8px 10px;background:#fff;border-left:3px solid var(--door);font-size:14px}
-#panel .watch{font:inherit;font-size:13px;border:0;background:var(--ink);color:#fff;border-radius:6px;padding:8px 10px;cursor:pointer;margin-bottom:12px}
+#panel .idea{margin:0 0 12px;padding:8px 10px;background:#fff;border-left:3px solid var(--accent);font-size:13.5px}
+#panel .watch{font:inherit;font-size:12.5px;border:0;background:var(--ink);color:#fff;border-radius:7px;padding:8px 10px;cursor:pointer;margin-bottom:12px}
 #panel .photos{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-#panel .photos img{width:100%;height:150px;object-fit:cover;border-radius:4px;cursor:zoom-in;display:block}
+#panel .photos img{width:100%;height:150px;object-fit:cover;border-radius:5px;cursor:zoom-in;display:block}
 #panel .photos img.wide{grid-column:1/-1;height:190px}
 dialog{border:0;border-radius:10px;padding:0;background:#000;max-width:92vw;max-height:92vh}
 dialog::backdrop{background:rgba(20,28,22,.7)}
 dialog img,dialog video{display:block;max-width:92vw;max-height:86vh}
 dialog form{position:absolute;right:8px;top:8px}
 dialog form button{font:inherit;border:0;border-radius:6px;padding:6px 10px;background:#fff;cursor:pointer}
-#walkhint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px}
-#walkhint[hidden]{display:none}
+#walkhint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(27,36,30,.85);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px}
+#walkhint[hidden],#cross[hidden]{display:none}
 #cross{position:fixed;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px var(--ink)}
-#cross[hidden]{display:none}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#BFD0DC,#E9EDE6);transition:opacity .8s ease;z-index:5}
+#loading.done{opacity:0;pointer-events:none}
+#loading div{text-align:center}
+#loading h2{margin:0 0 6px;font-size:20px}
+#loading p{margin:0;color:var(--muted);font-size:13px}
 @media (max-width:760px){
   nav{top:auto;bottom:8px;left:8px;right:8px;width:auto;max-height:42vh}
   #panel{left:8px;right:8px;top:8px;width:auto;bottom:auto;max-height:50vh}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
-<script>window.IMG_DATA=null;window.VIDEO_SRC='604-tennyson-house-tour.mp4';</script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js","three/webgpu":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js","three/tsl":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
 </head>
 <body>
 <div id="app"></div>
+<div id="loading"><div><h2>604 Tennyson Ave</h2><p>Starting the renderer</p></div></div>
 <nav aria-label="Model controls">
   <div>
     <h1>604 Tennyson Ave</h1>
     <p class="sub">Palo Alto | 5 bed | 2.5 bath | ~3,078 sq ft | corner of Tennyson Ave and Webster St</p>
   </div>
-  <div class="seg" role="group" aria-label="Floors">
-    <button data-view="all" class="on">Whole house</button>
-    <button data-view="x">Pulled apart</button>
-    <button data-view="g">Ground floor</button>
-    <button data-view="u">Upstairs</button>
+  <div>
+    <p class="cap">Camera</p>
+    <div class="seg four" role="group" aria-label="Camera">
+      <button data-shot="street">Street</button><button data-shot="hero">Corner</button><button data-shot="garden">Garden</button><button data-shot="aerial">Above</button>
+    </div>
+  </div>
+  <div>
+    <p class="cap">Light</p>
+    <div class="seg four" role="group" aria-label="Time of day">
+      <button data-time="morning">Morning</button><button data-time="noon">Noon</button><button data-time="afternoon">3:30 pm</button><button data-time="golden">Sunset</button>
+    </div>
+  </div>
+  <div>
+    <p class="cap">Floors</p>
+    <div class="seg" role="group" aria-label="Floors">
+      <button data-view="all" class="on">Whole house</button>
+      <button data-view="x">Pulled apart</button>
+      <button data-view="g">Ground floor</button>
+      <button data-view="u">Upstairs</button>
+    </div>
   </div>
   <div class="toggles">
-    <label><input type="checkbox" id="tRoof"> Roof</label>
-    <label><input type="checkbox" id="tLabels" checked> Room names</label>
+    <label><input type="checkbox" id="tRoof" checked> Roof</label>
+    <label><input type="checkbox" id="tLabels"> Room names</label>
     <label><input type="checkbox" id="tFurn"> Sample furniture</label>
     <label><input type="checkbox" id="tGarden" checked> Garden</label>
   </div>
   <div class="actions">
     <button id="walk" class="primary">Walk inside</button>
-    <button id="glb">Download .glb</button>
+    <a id="glb" href="604-tennyson-ave.glb" download>Download .glb</a>
   </div>
   <div class="rooms" id="rooms"></div>
   <details class="facts"><summary>Listing facts (Zillow, Nov 26 2026)</summary><ul>
@@ -102,7 +126,7 @@ dialog form button{font:inherit;border:0;border-radius:6px;padding:6px 10px;back
     <li>Owner pays yard service; tenant pays utilities and internet</li>
     <li>Parcel 124-03-001 | listed by Bin Zhou, Open Realty</li>
   </ul></details>
-  <p class="note">Outer walls follow the City of Palo Alto building outline (2,761 sq ft footprint). Roof, dormers, kitchen skylights and the wisteria spot come from the aerial photo. Rooms inside are placed from the tour video and the 14 listing photos, so their sizes are estimates. Click any room to see its photos.</p>
+  <p class="note">Outer walls follow the City of Palo Alto building outline (2,761 sq ft footprint). Roof, dormers, kitchen skylights and the wisteria spot come from the aerial photo. Rooms inside are placed from the tour video and the 14 listing photos, so their sizes are estimates. Sun position is computed for Palo Alto in late November. Rendered with WebGPU; <a href="classic.html">simple version</a>.</p>
 </nav>
 <aside id="panel" hidden aria-live="polite">
   <button class="x" aria-label="Close">&times;</button>
@@ -112,518 +136,8 @@ dialog form button{font:inherit;border:0;border-radius:6px;padding:6px 10px;back
 </aside>
 <dialog id="lb"><form method="dialog"><button>Close</button></form><img alt=""></dialog>
 <dialog id="vd"><form method="dialog"><button>Close</button></form><video controls playsinline preload="none"></video></dialog>
-<div id="walkhint" hidden>W A S D to move | mouse to look | F to switch floor | Esc to exit</div>
+<div id="walkhint" hidden>W A S D to move | Shift to hurry | mouse to look | F to switch floor | Esc to exit</div>
 <div id="cross" hidden></div>
-
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-
-const img = n => (window.IMG_DATA && window.IMG_DATA[n]) || ('img/' + n + '.jpg');
-const fmt = s => Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
-
-// ---------- data (1 unit = 1 ft; x runs along Tennyson Ave toward the northeast, z runs away from the street) ----------
-// Outer walls: City of Palo Alto building footprint (OpenStreetMap way 231878571, 2,761 sq ft), rotated onto the street grid.
-// x = 0 is the wall facing Webster St (corner side). Roof, dormers and skylights: Esri World Imagery aerial.
-const OUTLINE = [[0,0],[18.4,0],[18.4,8.6],[42.4,8.6],[42.4,14.2],[61.4,14.2],[61.4,51.8],[47.4,51.8],[47.4,57.7],[23,57.7],[23,48.6],[0,48.6]];
-const FY = [0, 10];
-const RIDGE_Z = 28, ROOF_TOP = 13.6, PITCH = 0.65;
-const DORMERS = [24, 39, 52];
-const hU = (z, x) => { let h = Math.max(0.5, Math.min(ROOF_TOP, ROOF_TOP - PITCH*Math.abs(z - RIDGE_Z)));
-  if (x != null && z < 15 && DORMERS.some(c => Math.abs(x - c) < 3)) h = Math.max(h, 7.4); return h; };
-const HFN = [() => 9, hU];
-const C = { wall:'#F4F2EC', den:'#6E3B22', bathG:'#DCE7D8', half:'#C9CCC6',
-  oak:'#B4743F', oakDark:'#8A4E2A', terra:'#B65A3E', tileBlue:'#3D5A66', tileBeige:'#B9AE98', tileWhite:'#E3E3DD',
-  brick:'#9C4A36', deck:'#9A968C', grass:'#8FAF6B', grass2:'#7FA05E', concrete:'#CFCBC3', gravel:'#B7B1A4' };
-
-const ROOMS = [
- // ground floor
- {id:'den',f:0,r:[0,0,18.4,18],name:'Office / den',floor:C.oakDark,wall:C.den,
-  desc:'Wood-paneled room with a stone fireplace, built-in shelves and a row of side windows. It sits in the front wing that sticks out toward Tennyson, with its side windows facing Webster St. The video calls it bedroom/office.',
-  idea:'Office', imgs:['z09','v030','v032','v034'], t:28},
- {id:'living',f:0,r:[18.4,8.6,42.4,24],name:'Living room',floor:C.oak,
-  desc:'Long main room right inside the front door. Wood floors, fireplace, open staircase along the back wall and big front windows.',
-  idea:'Living room / lounge', imgs:['z07','z08','v018','v019','v056'], t:16},
- {id:'back',f:0,r:[0,18,18.4,24],name:'Back hall',floor:C.oakDark,
-  desc:'Links the office, kitchen and a side door. Position inferred from how the video moves between rooms.', imgs:[], t:52},
- {id:'kitchen',f:0,r:[0,24,18.4,48.6],name:'Kitchen',floor:C.terra,
-  desc:'Vaulted ceiling with skylights, terracotta tile floor, oak cabinets, tile counters, double wall oven, fridge and dishwasher. French doors open to the pergola. The two skylights show on the aerial photo in this back corner.',
-  imgs:['z04','z03','z05','v080','v081','v082','v083'], t:60},
- {id:'dining',f:0,r:[42.4,14.2,61.4,32],name:'Dining room',floor:C.oak,
-  desc:'Formal dining room with a beamed ceiling, chandelier and windows onto the garden.',
-  idea:'Meeting room', imgs:['z06'], t:56},
- {id:'hall',f:0,r:[18.4,24,42.4,30],name:'Inner hall',floor:C.oak,
-  desc:'Connects living room, dining room, kitchen, half bath, laundry and the ground-floor bath. Position inferred.', imgs:[], t:84},
- {id:'half',f:0,r:[18.4,30,23,36],name:'Half bath',floor:C.tileBeige,wall:C.half,
-  desc:'Powder room with a wall-mounted sink and toilet.', imgs:['v047'], t:42},
- {id:'laundry',f:0,r:[23,30,30,38],name:'Laundry',floor:C.terra,
-  desc:'Washer, dryer and utility sink. The listing says washer and dryer are included.', imgs:['v086'], t:84},
- {id:'bathG',f:0,r:[30,30,42.4,38],name:'Full bath (ground)',floor:C.tileBlue,wall:C.bathG,
-  desc:'Green botanical wallpaper, white subway tile, pedestal sink, tub and a green-tiled shower.',
-  imgs:['z12','v106','v108','v110'], t:102},
- {id:'pantry',f:0,r:[18.4,36,23,48.6],name:'Pantry / storage',floor:C.oak,
-  desc:'Narrow space between the kitchen and the back rooms. Use is inferred.', imgs:[], t:null},
- {id:'family',f:0,r:[42.4,32,61.4,51.8],name:'Family room / bedroom 2',floor:C.oak,
-  desc:'Back room with a beamed ceiling, built-in shelves and French doors to the garden. Sits next to the ground-floor full bath.',
-  imgs:['z11','v090','v092','v094'], t:88},
- {id:'rear',f:0,r:[23,38,42.4,57.7],name:'Back room',floor:C.oak,
-  desc:'The city outline shows the house reaching this far back as a one-story wing. The tour does not clearly show this room, so its use is unknown.', imgs:[], t:null},
- // upstairs
- {id:'bed3',f:1,r:[18,12,31,21.4],name:'Bedroom 3',floor:C.oak,
-  desc:'Front bedroom under the roof slope with a dormer window toward Tennyson.', imgs:['z13'], t:112},
- {id:'bed4',f:1,r:[31,12,42.4,21.4],name:'Bedroom 4',floor:C.oak,
-  desc:'Front bedroom with sloped ceilings, a dormer window and built-in storage.', imgs:['z14','v137','v142'], t:134},
- {id:'bed5',f:1,r:[42.4,14.2,61.4,27],name:'Bedroom 5',floor:C.oak,
-  desc:'Corner bedroom with sloped ceiling, a dormer and a gable-end window. Exact size not visible in the video.', imgs:['v141','v138'], t:124},
- {id:'hallU',f:1,r:[18,21.4,42.4,27],name:'Upstairs hall',floor:C.oak,hole:[26,21.5,40,24],
-  desc:'Top of the main stair, under the roof ridge. Leads to the bedrooms, the bath and the balcony door.', imgs:['v140','v128','v124'], t:122},
- {id:'bathU',f:1,r:[18,27,28,37],name:'Full bath (upstairs)',floor:C.tileWhite,
-  desc:'Tub with hand shower tucked under the roof slope, cast-iron wall sink, toilet.', imgs:['z10','v151','v153'], t:146},
- {id:'hall2',f:1,r:[28,27,36,32],name:'Balcony landing',floor:C.oak,
-  desc:'Short hall ending in a glass French door to the balcony.', imgs:['v133'], t:128},
- {id:'store',f:1,r:[36,27,61.4,42],name:'Eaves storage',floor:C.oak,
-  desc:'Space under the back roof slope. Inferred.', imgs:[], t:null},
- // outside
- {id:'porch',f:0,r:[18.4,1,30,8.6],name:'Front porch',floor:C.brick,out:true,
-  desc:'Brick steps, covered porch and the red front door with glass side panels, tucked next to the front wing.', imgs:['v014','v016'], t:10},
- {id:'balcony',f:1,r:[28,32,36,38],name:'Balcony',floor:C.deck,out:true,
-  desc:'Small deck cut into the back roof off the upstairs landing. A flat patch shows here on the aerial photo.', imgs:['v133'], t:130},
- {id:'pergola',f:0,r:[0,48.6,18.4,62],name:'Wisteria pergola',floor:C.brick,out:true,
-  desc:'Wooden pergola wrapped in old wisteria, right outside the kitchen French doors. The purple wisteria shows on the aerial photo here.', imgs:['v074','v078'], t:72},
- {id:'front',f:0,r:[-40,-35,66,-3],name:'Front yard',floor:C.grass,out:true,lowLabel:true,
-  desc:'Lawn on Tennyson Ave, straight concrete walk from the gate, shrubs and maples along the house.', imgs:['z01'], t:0},
- {id:'garden',f:0,r:[-40,62,80,118],name:'Back garden',floor:C.grass,out:true,lowLabel:true,
-  desc:'Big lawn with curved brick paths, brick terraces and tall redwoods. Listing: owner pays yard service.', imgs:['z02','v184','v186'], t:180},
- {id:'side',f:0,r:[66,-35,76,62],name:'Driveway / side yard',floor:C.gravel,out:true,lowLabel:true,
-  desc:'Off-street parking and a stepping-stone side path. Listing mentions a Tesla charger on site. Which side the driveway is on is an estimate.', imgs:['v174','v178'], t:166},
-];
-// openings: [floor, 'h' (wall at z=const) | 'v' (wall at x=const), at, center, width, type]
-const OPEN = [
- // ground: doors and openings
- [0,'h',8.6,23,3.5,'front'], [0,'v',18.4,11,3,'door'], [0,'h',24,30,5,'open'], [0,'v',42.4,19,4,'open'],
- [0,'h',18,9,3,'door'], [0,'h',24,9,4,'open'], [0,'v',0,21,3,'door'], [0,'v',18.4,27,3,'door'],
- [0,'v',42.4,27,3,'door'], [0,'h',30,20.7,2.4,'door'], [0,'h',30,26.5,2.4,'door'], [0,'h',30,36,2.6,'door'],
- [0,'h',48.6,9,5,'french'], [0,'v',18.4,42,2.6,'door'], [0,'h',32,52,4,'open'], [0,'h',51.8,54,5,'french'],
- [0,'v',42.4,46,3,'door'], [0,'h',57.7,35,5,'french'], [0,'h',38,26.5,2.6,'door'],
- // ground: windows
- [0,'h',0,9.2,5,'win'], [0,'v',0,4,3,'win'], [0,'v',0,9,3,'win'], [0,'v',0,14,3,'win'],
- [0,'h',8.6,32,6,'win'], [0,'h',8.6,39,3,'win'], [0,'h',14.2,48,4,'win'], [0,'h',14.2,56,4,'win'],
- [0,'v',61.4,20,4,'win'], [0,'v',61.4,27,4,'win'], [0,'v',61.4,40,4,'win'], [0,'v',61.4,46,4,'win'],
- [0,'v',0,31,4,'win'], [0,'v',0,38,4,'win'], [0,'v',0,44,3,'win'], [0,'h',48.6,20.7,2,'win'],
- [0,'v',23,53,3,'win'], [0,'h',57.7,28,3,'win'], [0,'h',57.7,41,3,'win'],
- // upstairs
- [1,'h',12,24,3.6,'win'], [1,'h',12,39,3.6,'win'], [1,'h',14.2,52,3.6,'win'],
- [1,'h',21.4,22,2.8,'door'], [1,'h',21.4,41,2.4,'door'], [1,'v',42.4,24,2.8,'door'], [1,'h',27,22,2.4,'door'],
- [1,'h',27,32,4,'open'], [1,'h',32,32,4,'french'], [1,'h',27,41,2.6,'door'],
- [1,'v',61.4,19,3,'win'], [1,'v',61.4,34,3,'win'],
-];
-
-// ---------- scene ----------
-const app = document.getElementById('app');
-const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-app.appendChild(renderer.domElement);
-const css = new CSS2DRenderer();
-css.setSize(innerWidth, innerHeight);
-Object.assign(css.domElement.style, {position:'fixed', inset:'0', pointerEvents:'none'});
-app.appendChild(css.domElement);
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#DCE3D5');
-scene.fog = new THREE.Fog('#DCE3D5', 260, 520);
-const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.3, 1200);
-const orbit = new OrbitControls(camera, renderer.domElement);
-orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI*0.49; orbit.minDistance = 15; orbit.maxDistance = 380;
-const HOME = {pos:new THREE.Vector3(-58, 100, -96), tgt:new THREE.Vector3(30, 4, 30)};
-camera.position.copy(HOME.pos); orbit.target.copy(HOME.tgt);
-
-scene.add(new THREE.HemisphereLight('#FFFFFF', '#8FA07F', 1.1));
-const sun = new THREE.DirectionalLight('#FFF6E8', 1.9);
-sun.position.set(-60, 120, -50); sun.castShadow = true;
-Object.assign(sun.shadow.camera, {left:-130, right:130, top:130, bottom:-130, near:10, far:420});
-sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.3;
-sun.target.position.set(30, 0, 34); scene.add(sun, sun.target);
-
-const root = new THREE.Group(); root.name = '604 Tennyson Ave'; scene.add(root);
-const G = { f0:new THREE.Group(), f1:new THREE.Group(), roof:new THREE.Group(), garden:new THREE.Group(), furn0:new THREE.Group(), furn1:new THREE.Group() };
-G.f0.name='Ground floor'; G.f1.name='Upstairs'; G.roof.name='Roof'; G.garden.name='Garden'; G.furn0.name='Sample furniture ground'; G.furn1.name='Sample furniture upstairs';
-root.add(G.f0, G.f1, G.roof, G.garden); G.f0.add(G.furn0); G.f1.add(G.furn1);
-
-const matCache = {};
-const mat = (c, o={}) => { const k = c + JSON.stringify(o); return matCache[k] ||= new THREE.MeshStandardMaterial({color:c, roughness:.85, metalness:0, ...o}); };
-const glassMat = new THREE.MeshStandardMaterial({color:'#BFD8E0', transparent:true, opacity:.32, roughness:.1, depthWrite:false});
-const boxGeo = new THREE.BoxGeometry(1,1,1);
-function box(parent, x0, z0, x1, z1, y0, y1, color, opts={}) {
-  const m = new THREE.Mesh(boxGeo, opts.material || mat(color));
-  m.scale.set(Math.abs(x1-x0)||0.01, Math.abs(y1-y0)||0.01, Math.abs(z1-z0)||0.01);
-  m.position.set((x0+x1)/2, (y0+y1)/2, (z0+z1)/2);
-  m.castShadow = opts.cast !== false; m.receiveShadow = true;
-  if (opts.name) m.name = opts.name;
-  parent.add(m); return m;
-}
-
-// ---------- walls ----------
-const T = 0.35;
-function spec(type, H) {
-  if (type === 'win') return {sill:3, head:Math.min(6.8, H-0.4), glass:true};
-  if (type === 'french') return {sill:0, head:Math.min(7.4, H-0.3), glass:true};
-  if (type === 'open') return {sill:0, head:Math.min(7.6, H-0.3)};
-  return {sill:0, head:Math.min(7, H-0.3)};
-}
-const SIDING = '#EEEDE6', fmCache = {};
-const faceMats = (color, idx) => fmCache[color+idx] ||= Array.from({length:6}, (_, i) => mat(i === idx ? SIDING : color));
-const indoor = (f, x, z) => ROOMS.some(r => r.f === f && !r.out && x > r.r[0] && x < r.r[2] && z > r.r[1] && z < r.r[3]);
-function wallLine(parent, f, kind, at, a0, a1, inset, color) {
-  const dir = inset > 0 ? -1 : 1, faceIdx = kind === 'h' ? (dir > 0 ? 4 : 5) : (dir > 0 ? 0 : 1);
-  const y0 = FY[f], hfn = HFN[f];
-  const ops = OPEN.filter(o => o[0]===f && o[1]===kind && Math.abs(o[2]-at) < 0.01 && o[3] > a0 && o[3] < a1).map(o => ({c:o[3], w:o[4], type:o[5]}));
-  const pts = new Set([a0, a1]);
-  ops.forEach(o => { pts.add(Math.max(a0, o.c-o.w/2)); pts.add(Math.min(a1, o.c+o.w/2)); });
-  if (f === 1) for (let v = Math.ceil(a0); v < a1; v++) pts.add(v);
-  const arr = [...pts].sort((p,q) => p-q);
-  const pos = kind === 'h' ? at + inset : at + inset;
-  for (let i = 0; i < arr.length-1; i++) {
-    const s = arr[i], e = arr[i+1]; if (e - s < 0.02) continue;
-    const m = (s+e)/2, H = kind === 'h' ? hfn(at, m) : hfn(m, at);
-    const o = ops.find(o => m > o.c-o.w/2 && m < o.c+o.w/2);
-    const pieces = [];
-    const ext = kind === 'h' ? !indoor(f, m, at + dir*0.5) : !indoor(f, at + dir*0.5, m);
-    const put = (b, t, material) => { material = material || (ext ? faceMats(color, faceIdx) : undefined); return kind === 'h'
-      ? box(parent, s, pos-T/2, e, pos+T/2, y0+b, y0+t, color, {material})
-      : box(parent, pos-T/2, s, pos+T/2, e, y0+b, y0+t, color, {material}); };
-    if (!o) { put(0, H); continue; }
-    const sp = spec(o.type, H);
-    if (sp.sill > 0) put(0, sp.sill);
-    if (H > sp.head) put(sp.head, H);
-    if (sp.glass) { const g = put(sp.sill, sp.head, glassMat); g.castShadow = false; g.scale[kind==='h'?'z':'x'] = 0.08; }
-    if (o.type === 'front' && Math.abs(s - (o.c-o.w/2)) < 0.01) {
-      box(parent, s+0.05, at+0.1, s+0.22, at+o.w*0.92, y0, y0+7, '#A3302A', {name:'Front door'});
-    }
-  }
-}
-const floorMeshes = [];
-const labels = [];
-function buildRoom(rm) {
-  const grp = rm.f === 0 ? G.f0 : G.f1;
-  const [x0,z0,x1,z1] = rm.r, y = FY[rm.f];
-  const fr = rm.hole ? holeRects(rm.r, rm.hole) : [rm.r];
-  rm.meshes = fr.map(r => {
-    const th = rm.out ? 0.12 : (rm.f === 0 ? 0.3 : 0.9);
-    const lift = rm.out && rm.f === 0 ? -0.15 : 0;
-    const m = box(grp, r[0], r[1], r[2], r[3], y-th+lift, y+lift, rm.floor, {material: new THREE.MeshStandardMaterial({color:rm.floor, roughness:.8}), cast:false, name:rm.name+' floor'});
-    m.userData.room = rm; floorMeshes.push(m); return m;
-  });
-  if (!rm.out) {
-    const wc = rm.wall || C.wall;
-    wallLine(grp, rm.f, 'h', z0, x0, x1, T/2, wc);
-    wallLine(grp, rm.f, 'h', z1, x0, x1, -T/2, wc);
-    wallLine(grp, rm.f, 'v', x0, z0, z1, T/2, wc);
-    wallLine(grp, rm.f, 'v', x1, z0, z1, -T/2, wc);
-  }
-  const div = document.createElement('div');
-  div.className = 'lbl' + (rm.out ? ' out' : ''); div.textContent = rm.name;
-  const lbl = new CSS2DObject(div);
-  const cx = (x0+x1)/2, cz = (z0+z1)/2;
-  lbl.position.set(rm.id==='hallU' ? 21 : cx, y + (rm.out ? 1 : 1.2), cz);
-  grp.add(lbl); labels.push(lbl); rm.label = div; rm.lblObj = lbl;
-}
-function holeRects(r, h) {
-  return [[r[0],r[1],h[0],r[3]], [h[2],r[1],r[2],r[3]], [h[0],r[1],h[2],h[1]], [h[0],h[3],h[2],r[3]]];
-}
-ROOMS.filter(r => !['front','garden','side'].includes(r.id)).forEach(buildRoom);
-
-// ---------- fixtures ----------
-const F0 = G.f0, F1 = G.f1, W = '#FAFAF7';
-// stairs: 14 steps along the living room back wall, rising from x=26 (ground) to x=40 (upstairs)
-for (let i = 0; i < 14; i++) box(F0, 26+i, 21.6, 27+i, 23.8, 0, (i+1)*10/14, i%2 ? '#9C6033' : '#A9683A', {name:'Stair'});
-for (let i = 0; i < 14; i++) box(F0, 26+i, 21.42, 27+i, 21.58, (i+1)*10/14, (i+1)*10/14+3, '#7A4A2A'); // stepped stair rail
-box(F1, 26, 21.42, 40, 21.56, 10, 13, '#7A4A2A'); box(F1, 25.8, 21.5, 25.95, 24, 10, 13, '#7A4A2A');
-// back-to-back fireplaces on the wall between den and living room (one shared chimney)
-box(F0, 18.6, 13, 20.2, 17.5, 0, 4.6, '#F0EDE6', {name:'Fireplace'}); box(F0, 20.15, 14.3, 20.3, 16.2, 0.2, 3, '#2A2725');
-box(F0, 16.4, 12.6, 18.2, 17.2, 0, 5.2, '#8D8A82', {name:'Stone fireplace'}); box(F0, 16.25, 14, 16.42, 15.8, 0.2, 2.8, '#2A2725');
-for (let k = 0; k < 5; k++) box(F0, 2.5, 16.6, 13.5, 17.8, k*1.6, k*1.6+0.15, '#4F2916');
-box(F0, 2.5, 17.6, 13.5, 17.8, 0, 7.2, '#5A2F1A', {name:'Built-in shelves'});
-// kitchen
-box(F0, 0.2, 30, 2.6, 46, 0, 2.9, '#9C6A3A', {name:'Counter'}); box(F0, 0.2, 30, 2.7, 46, 2.9, 3.1, '#ECEAE3');
-box(F0, 2.6, 45.9, 6.5, 48.4, 0, 2.9, '#9C6A3A'); box(F0, 2.6, 45.8, 6.5, 48.4, 2.9, 3.1, '#ECEAE3');
-box(F0, 7.5, 34, 10, 41, 0, 2.9, '#9C6A3A', {name:'Peninsula'}); box(F0, 7.4, 33.9, 10.1, 41.1, 2.9, 3.1, '#ECEAE3');
-box(F0, 15.8, 24.4, 18.2, 27.2, 0, 7.2, '#9C6A3A', {name:'Double wall oven'}); box(F0, 15.7, 24.8, 15.8, 26.8, 2.2, 5.8, '#3A3A3A');
-box(F0, 15.8, 28.4, 18.2, 31.4, 0, 6.2, '#F2F0EA', {name:'Fridge'});
-// half bath, laundry
-box(F0, 18.8, 33, 20.2, 34.6, 0, 1.4, W); box(F0, 18.6, 33.4, 19.2, 34.2, 1.4, 2.8, W);
-box(F0, 21, 35.3, 22.6, 35.9, 2.4, 3, W, {name:'Wall sink'});
-box(F0, 27, 35.4, 29.8, 37.6, 0, 3, W, {name:'Washer'}); box(F0, 23.8, 35.4, 26.6, 37.6, 0, 3, W, {name:'Dryer'});
-// ground full bath
-box(F0, 36.8, 35.4, 42.1, 37.7, 0, 1.8, W, {name:'Tub'});
-box(F0, 39, 30.3, 42.1, 33.5, 0, 0.3, '#5E9C8C'); box(F0, 38.8, 30.3, 39.05, 33.5, 0.3, 7, '#5E9C8C', {name:'Shower tile'});
-box(F0, 31, 36, 32.5, 37.6, 0, 1.4, W); box(F0, 33.5, 37.1, 34.9, 37.75, 0, 2.9, W, {name:'Pedestal sink'});
-// upstairs bath
-box(F1, 18.3, 33.4, 23, 36.7, 10, 11.7, W, {name:'Tub'}); box(F1, 25.5, 35, 27, 36.6, 10, 11.4, W); box(F1, 25.6, 27.4, 27.2, 28, 12.4, 13.2, W);
-// balcony railing
-const rail = '#F4F2EC';
-box(F1, 28, 37.8, 36, 38, 10, 13, rail); box(F1, 28, 32, 28.2, 38, 10, 13, rail); box(F1, 35.8, 32, 36, 38, 10, 13, rail);
-// band between floors on the northeast gable end
-box(F1, 61.2, 14.2, 61.6, 51.8, 9, 10.05, '#EEEDE6', {cast:false});
-
-// ---------- roof ----------
-const roofMat = mat('#5D615E');
-const RY = z => FY[1] + ROOF_TOP + 0.35 - PITCH*Math.abs(z - RIDGE_Z); // centre line of the main roof slab
-function slab(x0, y0, x1, y1, z0, z1, material) { // ridge runs along z
-  const dx = x1-x0, dy = y1-y0, len = Math.hypot(dx, dy);
-  const m = new THREE.Mesh(boxGeo, material || roofMat);
-  m.scale.set(len, 0.45, z1-z0); m.position.set((x0+x1)/2, (y0+y1)/2, (z0+z1)/2);
-  m.rotation.z = Math.atan2(dy, dx); m.castShadow = true; m.receiveShadow = true; G.roof.add(m); return m;
-}
-function slabZ(x0, x1, z0, z1, material, lift = 0, th = 0.45) { // ridge runs along x
-  const y0 = RY(z0) + lift, y1 = RY(z1) + lift, dz = z1-z0, dy = y1-y0, len = Math.hypot(dz, dy);
-  const m = new THREE.Mesh(boxGeo, material || roofMat);
-  m.scale.set(x1-x0, th, len); m.position.set((x0+x1)/2, (y0+y1)/2, (z0+z1)/2);
-  m.rotation.x = -Math.atan2(dy, dz); m.castShadow = true; m.receiveShadow = true; G.roof.add(m); return m;
-}
-const FRONT_EAVE = 5.3, BACK_EAVE = 50.7;
-// front slope, split around the three dormers
-[[-1,21],[21,27,1],[27,36],[36,42,1],[42,42.4],[42.4,49],[49,55,1],[55,62.4]].forEach(([a, b, d]) => {
-  const z0 = a >= 42.4 ? 11 : FRONT_EAVE;
-  if (d) { if (a < 42.4) slabZ(a, b, z0, 11.9); slabZ(a, b, a >= 42.4 ? 19.6 : 18.4, RIDGE_Z); }
-  else slabZ(a, b, z0, RIDGE_Z);
-});
-// back slope, with a cut-out for the balcony
-slabZ(-1, 28, RIDGE_Z, BACK_EAVE); slabZ(36, 62.4, RIDGE_Z, BACK_EAVE); slabZ(28, 36, 38, BACK_EAVE);
-box(G.roof, 27.8, 32, 28.1, 38, 10, RY(32)-0.3, '#EEEDE6'); box(G.roof, 35.9, 32, 36.2, 38, 10, RY(32)-0.3, '#EEEDE6');
-// kitchen skylights (positions from the aerial photo)
-slabZ(4.5, 8, 41.5, 45, glassMat, 0.28, 0.12); slabZ(11, 14.5, 41.5, 45, glassMat, 0.28, 0.12);
-// dormers
-DORMERS.forEach(c => {
-  const zf = c > 42.4 ? 14.2 : 12, back = zf + 6.6;
-  box(G.roof, c-3.25, zf, c-2.95, back, 13, 17.5, '#EEEDE6'); box(G.roof, c+2.95, zf, c+3.25, back, 13, 17.5, '#EEEDE6');
-  slab(c-3.8, 17.3, c, 19.4, zf-0.6, back, roofMat); slab(c, 19.4, c+3.8, 17.3, zf-0.6, back, roofMat);
-  const s = new THREE.Shape(); s.moveTo(c-3.2, 17.4); s.lineTo(c+3.2, 17.4); s.lineTo(c, 19.2); s.lineTo(c-3.2, 17.4);
-  const g = new THREE.Mesh(new THREE.ShapeGeometry(s), mat('#F1F0EA', {side:THREE.DoubleSide})); g.position.z = zf - 0.02; G.roof.add(g);
-});
-// front-facing gable over the den wing
-slab(-1, 8.6, 9.2, 19.3, -1.2, 22); slab(9.2, 19.3, 19.4, 8.6, -1.2, 22);
-{ const s = new THREE.Shape(); s.moveTo(0, 9); s.lineTo(18.4, 9); s.lineTo(9.2, 18.5); s.lineTo(0, 9);
-  const g = new THREE.Mesh(new THREE.ShapeGeometry(s), mat('#F1F0EA', {side:THREE.DoubleSide})); g.position.z = -0.02; G.roof.add(g);
-  box(G.roof, 7.4, -0.15, 11, 0.05, 11.5, 14.5, '#BFD8E0', {material:glassMat}); }
-// gable ends of the main roof (shape drawn in z/y, turned to face along x)
-const gable = (x, pts) => { const s = new THREE.Shape(); s.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(p => s.lineTo(p[0], p[1]));
-  const g = new THREE.Mesh(new THREE.ShapeGeometry(s), mat('#F1F0EA', {side:THREE.DoubleSide})); g.rotation.y = -Math.PI/2; g.position.x = x; G.roof.add(g); };
-gable(-0.02, [[FRONT_EAVE+1, 9], [RIDGE_Z, FY[1]+ROOF_TOP], [48.6, 10.2], [48.6, 9]]);
-gable(61.62, [[42, 9], [42, FY[1]+hU(42)], [BACK_EAVE, 8.9], [51.8, 9]]);
-gable(61.62, [[14.2, 9], [14.2, 10], [12.2, 10], [12.2, 9]]);
-// wall above the ground floor where the front roof sits higher (northeast block)
-box(G.roof, 42.4, 14.05, 61.4, 14.4, 9, RY(14.2)-0.35, '#EEEDE6');
-// low roofs over the one-story back wings
-box(G.roof, 22.4, 50, 48, 58.3, 9.1, 9.6, '#6A6E6A'); box(G.roof, 47.4, 50, 62, 52.4, 9.1, 9.6, '#6A6E6A');
-// porch roof, posts and steps
-box(G.roof, 18.4, 0.6, 30.4, 8.6, 8.6, 9.1, '#6A6E6A', {name:'Porch roof'});
-[[19,1.2],[29.8,1.2]].forEach(([x,z]) => box(F0, x-0.3, z-0.3, x+0.3, z+0.3, 0, 8.6, '#2F5D50', {name:'Porch post'}));
-box(F0, 19.5, -2, 28.5, 1, -0.6, -0.15, C.brick, {name:'Porch steps'}); box(F0, 19.5, -1, 28.5, 1, -0.15, 0, C.brick);
-// shared chimney for the two fireplaces
-box(G.roof, 17.2, 13, 19.6, 16.6, 9.6, 22, '#8C5A46', {name:'Chimney'});
-G.roof.visible = false;
-
-// ---------- garden ----------
-const GD = G.garden;
-box(GD, -42, -35, 80, 118, -0.6, -0.3, C.grass, {cast:false, name:'Lot'});
-box(GD, -70, -62, 120, -41, -0.65, -0.55, '#8F918C', {cast:false, name:'Tennyson Ave'});
-box(GD, -70, -41, 120, -35, -0.5, -0.3, C.concrete, {cast:false, name:'Sidewalk'});
-box(GD, -70, -41, -50, 130, -0.64, -0.56, '#8F918C', {cast:false, name:'Webster St'});
-box(GD, -50, -35, -44, 130, -0.5, -0.3, C.concrete, {cast:false, name:'Sidewalk'});
-box(GD, 23, -35, 27, -2, -0.32, -0.2, C.concrete, {cast:false, name:'Front walk'});
-box(GD, 66, -35, 76, 62, -0.32, -0.22, C.gravel, {cast:false, name:'Driveway'});
-box(GD, 72, 52, 72.8, 53, -0.3, 4.5, '#E5E3DD', {name:'EV charger'});
-for (let x = -42; x < 66; x += 0.7) if (x < 22.5 || x > 27.5) box(GD, x, -35.2, x+0.28, -35, -0.3, 3.2, '#F4F3EE', {cast:false});
-box(GD, -42, -35.3, 66, -35.1, 1.9, 2.2, '#F4F3EE', {cast:false});
-for (let k = 0; k < 3; k++) box(GD, -10, 98+k*2.6, 44, 118, -0.3, 0.6*(k+1)-0.3, k===2 ? C.grass2 : C.brick, {cast:false, name:'Terrace'});
-const path = (p, w) => { for (let t = 0; t < 1; t += 0.02) {
-  const b = (a,i) => (1-t)**3*a[0][i] + 3*(1-t)**2*t*a[1][i] + 3*(1-t)*t*t*a[2][i] + t**3*a[3][i];
-  const x = b(p,0), z = b(p,1), m = new THREE.Mesh(boxGeo, mat(C.brick));
-  const t2 = Math.min(1, t+0.02), x2 = (1-t2)**3*p[0][0]+3*(1-t2)**2*t2*p[1][0]+3*(1-t2)*t2*t2*p[2][0]+t2**3*p[3][0], z2 = (1-t2)**3*p[0][1]+3*(1-t2)**2*t2*p[1][1]+3*(1-t2)*t2*t2*p[2][1]+t2**3*p[3][1];
-  m.scale.set(w, 0.12, Math.hypot(x2-x, z2-z)+0.4); m.position.set(x, -0.24, z); m.rotation.y = Math.atan2(x2-x, z2-z); m.receiveShadow = true; GD.add(m); } };
-path([[54,52],[54,72],[30,74],[30,98]], 3.2); path([[9,62],[4,76],[24,84],[20,98]], 2.6);
-// pergola behind the kitchen
-const PG = '#6B5847';
-[0.6, 9.2, 17.8].forEach(x => [49.4, 55.5, 61.6].forEach(z => box(GD, x-0.3, z-0.3, x+0.3, z+0.3, 0, 8.6, PG, {name:'Pergola post'})));
-[0.6, 9.2, 17.8].forEach(x => box(GD, x-0.25, 49, x+0.25, 62.2, 8.6, 9.3, PG));
-for (let z = 49.4; z <= 62; z += 1.6) box(GD, 0, z-0.12, 18.4, z+0.12, 9.3, 9.6, PG);
-const leaf = (x, y, z, r, c) => { const s = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(c, {flatShading:true})); s.position.set(x, y, z); s.castShadow = true; GD.add(s); };
-[[3,10,52,2],[12,10.2,58,2.4],[16,9.8,51,1.8],[6,10,60,2.1]].forEach(([x,y,z,r]) => leaf(x,y,z,r,'#7B6A9A'));
-const tree = (x, z, h, kind) => {
-  box(GD, x-0.6, z-0.6, x+0.6, z+0.6, 0, h*0.35, '#5B4334', {name:'Trunk'});
-  if (kind === 'redwood') { const c = new THREE.Mesh(new THREE.ConeGeometry(h*0.17, h*0.8, 9), mat('#3E5B3A', {flatShading:true})); c.position.set(x, h*0.58, z); c.castShadow = true; GD.add(c); }
-  else { leaf(x, h*0.62, z, h*0.28, kind === 'maple' ? '#B8643A' : '#6E8F4E'); leaf(x+h*0.12, h*0.5, z-h*0.08, h*0.2, kind === 'maple' ? '#C9873F' : '#7E9C58'); }
-};
-tree(-16,104,70,'redwood'); tree(-4,112,62,'redwood'); tree(56,110,66,'redwood'); tree(78,-26,60,'redwood');
-tree(-14,-22,18,'maple'); tree(46,-18,24,'oak'); tree(-24,64,26,'oak'); tree(72,86,30,'oak'); tree(33,-14,14,'maple'); tree(-26,20,34,'oak');
-[[-4,-6],[-6,4],[34,4],[50,8],[-6,24],[64,26]].forEach(([x,z]) => leaf(x, 1.6, z, 2.2, '#5F7F45'));
-ROOMS.filter(r => ['front','garden','side'].includes(r.id)).forEach(rm => {
-  const [x0,z0,x1,z1] = rm.r;
-  const m = box(GD, x0, z0, x1, z1, -0.31, -0.29, rm.floor, {material:new THREE.MeshStandardMaterial({color:rm.floor, transparent:true, opacity:0}), cast:false, name:rm.name});
-  m.userData.room = rm; m.userData.invisible = true; floorMeshes.push(m); rm.meshes = [m];
-  const div = document.createElement('div'); div.className = 'lbl out'; div.textContent = rm.name;
-  const lbl = new CSS2DObject(div); lbl.position.set(rm.id==='front'? 30 : rm.id==='side' ? 71 : 24, 0.5, rm.id==='front' ? -22 : rm.id==='side' ? 10 : 84); GD.add(lbl); labels.push(lbl); rm.label = div; rm.lblObj = lbl;
-});
-{ const st = (t, x, z) => { const d = document.createElement('div'); d.className = 'lbl out'; d.textContent = t; const l = new CSS2DObject(d); l.position.set(x, 0, z); GD.add(l); labels.push(l); };
-  st('Tennyson Ave', 10, -51); st('Webster St', -60, 40); }
-
-// ---------- sample furniture ----------
-const FU = G.furn0, FV = G.furn1, fab = '#7D8A78', wood = '#5C4A3A', dark = '#3C3A36';
-box(FU, 24, 10.6, 37, 20.4, 0.01, 0.06, '#C9C2B0', {cast:false}); box(FU, 26, 10, 35, 12.6, 0, 2.6, fab, {name:'Sofa'}); box(FU, 26, 18.2, 35, 20.8, 0, 2.6, fab, {name:'Sofa'}); box(FU, 28.5, 14.2, 32.5, 16.4, 0, 1.4, wood);
-box(FU, 47, 19.5, 57, 24.5, 2.3, 2.5, dark, {name:'Meeting table'}); box(FU, 47.5, 20, 56.5, 24, 0, 2.3, dark);
-[[48.5,18.4],[52,18.4],[55.5,18.4],[48.5,25.6],[52,25.6],[55.5,25.6],[45.8,22],[58.2,22]].forEach(([x,z]) => box(FU, x-0.8, z-0.8, x+0.8, z+0.8, 0, 3, '#2F3B33', {name:'Chair'}));
-[[2,3],[9.5,3],[2,9],[9.5,9]].forEach(([x,z]) => { box(FU, x, z, x+5, z+2.5, 0, 2.5, '#D9D4C7', {name:'Desk'}); box(FU, x+1.8, z+2.8, x+3.2, z+4.2, 0, 3.2, '#2F3B33'); });
-box(FU, 54.5, 42, 60, 48.7, 0, 2, '#E7E3D8', {name:'Bed'});
-[[21.5,14.4,26.8,21.1],[34,14.4,39.3,21.1],[49.5,19,56.2,24.3]].forEach(([a,b,c,d]) => box(FV, a, b, c, d, 10, 12, '#E7E3D8', {name:'Bed'}));
-G.furn0.visible = G.furn1.visible = false;
-
-// ---------- ui: rooms list ----------
-const roomsEl = document.getElementById('rooms');
-const area = r => Math.round((r.r[2]-r.r[0])*(r.r[3]-r.r[1]) - (r.hole ? (r.hole[2]-r.hole[0])*(r.hole[3]-r.hole[1]) : 0));
-[['Ground floor', r => r.f===0 && !r.out], ['Upstairs', r => r.f===1 && !r.out], ['Outside', r => r.out]].forEach(([h, fn]) => {
-  const sec = document.createElement('div'); sec.innerHTML = `<h2>${h}</h2><ul></ul>`;
-  ROOMS.filter(fn).forEach(rm => { const li = document.createElement('li'); const b = document.createElement('button');
-    b.innerHTML = `${rm.name}<span>${rm.out ? '' : area(rm) + ' sq ft'}</span>`; b.onclick = () => select(rm, true); rm.btn = b; li.appendChild(b); sec.querySelector('ul').appendChild(li); });
-  roomsEl.appendChild(sec);
-});
-
-// ---------- selection + panel ----------
-const panel = document.getElementById('panel');
-let selected = null;
-const SEL = new THREE.Color('#A3302A');
-function select(rm, fly) {
-  if (selected) { selected.meshes.forEach(m => { m.material.color.set(selected.floor); if (m.userData.invisible) m.material.opacity = 0; }); selected.label.classList.remove('sel'); selected.btn.classList.remove('on'); }
-  selected = rm;
-  if (!rm) { panel.hidden = true; updateLabels(); return; }
-  rm.meshes.forEach(m => { m.material.color.set(rm.floor).lerp(SEL, 0.45); if (m.userData.invisible) m.material.opacity = 0.35; });
-  rm.label.classList.add('sel'); rm.btn.classList.add('on'); updateLabels();
-  const w = Math.round(rm.r[2]-rm.r[0]), d = Math.round(rm.r[3]-rm.r[1]);
-  panel.querySelector('.fl').textContent = rm.out ? 'Outside' : rm.f === 0 ? 'Ground floor' : 'Upstairs';
-  panel.querySelector('h2').textContent = rm.name;
-  panel.querySelector('.size').textContent = rm.out ? '' : `About ${w} x ${d} ft | ~${area(rm)} sq ft (estimate)`;
-  panel.querySelector('.desc').textContent = rm.desc;
-  const idea = panel.querySelector('.idea'); idea.hidden = !rm.idea; idea.textContent = rm.idea ? 'Could work as: ' + rm.idea : '';
-  const wb = panel.querySelector('.watch'); wb.hidden = rm.t == null || !videoOK; wb.textContent = `Watch in the tour at ${fmt(rm.t || 0)}`; wb.onclick = () => playAt(rm.t);
-  const ph = panel.querySelector('.photos'); ph.innerHTML = '';
-  if (!rm.imgs.length) ph.innerHTML = '<p class="size">No clear shot of this space in the video or listing.</p>';
-  rm.imgs.forEach((n, i) => { const im = new Image(); im.src = img(n); im.alt = rm.name + ' photo'; im.loading = 'lazy'; if (n[0] === 'z' && i === 0) im.className = 'wide'; im.onclick = () => { lb.querySelector('img').src = im.src; lb.showModal(); }; ph.appendChild(im); });
-  panel.hidden = false;
-  if (fly) {
-    const want = rm.out ? 'all' : rm.f === 0 ? 'g' : (view === 'x' ? 'x' : 'all');
-    if (!rm.out && view !== want && !(rm.f === 1 && view === 'u')) setView(rm.f === 0 ? 'g' : view === 'x' ? 'x' : 'u');
-    const cx = (rm.r[0]+rm.r[2])/2, cz = (rm.r[1]+rm.r[3])/2, cy = (rm.f === 1 ? FY[1] + (view === 'x' ? XOFF : 0) : 0);
-    flyTo(new THREE.Vector3(cx, cy, cz), rm.out ? 130 : 78);
-  }
-}
-panel.querySelector('.x').onclick = () => { select(null); updateLabels(); };
-const lb = document.getElementById('lb'), vd = document.getElementById('vd'), video = vd.querySelector('video');
-let videoOK = false;
-if (window.VIDEO_SRC) { video.src = window.VIDEO_SRC; video.preload = 'metadata'; video.addEventListener('loadedmetadata', () => { videoOK = true; if (selected) select(selected); }); }
-function playAt(t) { vd.showModal(); video.currentTime = t; video.play().catch(() => {}); }
-vd.addEventListener('close', () => video.pause());
-
-let fly = null;
-function flyTo(target, dist) {
-  const dir = camera.position.clone().sub(orbit.target).normalize();
-  fly = {t0:performance.now(), p0:camera.position.clone(), q0:orbit.target.clone(), p1:target.clone().add(dir.multiplyScalar(dist)), q1:target.clone()};
-  if (fly.p1.y < target.y + dist*0.5) fly.p1.y = target.y + dist*0.6;
-}
-
-// ---------- views ----------
-let view = 'all'; const XOFF = 20;
-function setView(v) {
-  view = v;
-  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
-  G.f0.visible = v !== 'u'; G.f1.visible = v !== 'g';
-  G.f1.position.y = v === 'x' ? XOFF : 0;
-  G.roof.position.y = v === 'x' ? XOFF*2 : 0;
-  G.roof.visible = document.getElementById('tRoof').checked && v !== 'g' && v !== 'u';
-  updateLabels();
-}
-function updateLabels() {
-  const on = document.getElementById('tLabels').checked, roof = G.roof.visible;
-  ROOMS.forEach(rm => { if (!rm.lblObj) return; const cx = (rm.r[0]+rm.r[2])/2, cz = (rm.r[1]+rm.r[3])/2;
-    const covered = view === 'all' && rm.f === 0 && !rm.out;
-    const offFloor = (view === 'g' && rm.f === 1) || (view === 'u' && rm.f === 0 && !rm.out);
-    rm.lblObj.visible = !offFloor && (on && !covered && !(roof && !rm.out) || (on && rm === selected)); });
-}
-document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setView(b.dataset.view));
-document.getElementById('tRoof').onchange = e => setView(view);
-document.getElementById('tLabels').onchange = updateLabels;
-document.getElementById('tFurn').onchange = e => { G.furn0.visible = G.furn1.visible = e.target.checked; };
-document.getElementById('tGarden').onchange = e => { G.garden.visible = e.target.checked; };
-
-// ---------- picking ----------
-const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
-renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
-renderer.domElement.addEventListener('pointerup', e => {
-  if (walking || !down || Math.hypot(e.clientX-down[0], e.clientY-down[1]) > 5) return;
-  ptr.set(e.clientX/innerWidth*2-1, -e.clientY/innerHeight*2+1); ray.setFromCamera(ptr, camera);
-  const vis = floorMeshes.filter(m => { let o = m; while (o) { if (!o.visible) return false; o = o.parent; } return true; });
-  const hit = ray.intersectObjects(vis, false)[0];
-  select(hit ? hit.object.userData.room : null, false);
-});
-
-// ---------- walk mode ----------
-const plc = new PointerLockControls(camera, document.body);
-let walking = false, walkFloor = 0, saved = null; const keys = {};
-document.getElementById('walk').onclick = () => plc.lock();
-plc.addEventListener('lock', () => {
-  walking = true; saved = {p:camera.position.clone(), t:orbit.target.clone(), v:view, roof:G.roof.visible};
-  orbit.enabled = false; setView('all'); G.roof.visible = false; walkFloor = 0;
-  camera.position.set(25, 5.5, -12); camera.lookAt(25, 5.5, 10);
-  document.getElementById('walkhint').hidden = false; document.getElementById('cross').hidden = false; select(null);
-});
-plc.addEventListener('unlock', () => {
-  walking = false; orbit.enabled = true; camera.position.copy(saved.p); orbit.target.copy(saved.t); setView(saved.v);
-  document.getElementById('walkhint').hidden = true; document.getElementById('cross').hidden = true;
-});
-addEventListener('keydown', e => { keys[e.code] = true; if (walking && e.code === 'KeyF') { walkFloor = 1 - walkFloor; if (walkFloor === 1) camera.position.set(22, 15.5, 24.5); else camera.position.set(30, 5.5, 16); } });
-addEventListener('keyup', e => keys[e.code] = false);
-
-// ---------- export ----------
-async function exportGLB() {
-  const was = {f0:G.f0.visible, f1:G.f1.visible, roof:G.roof.visible, y1:G.f1.position.y, yr:G.roof.position.y};
-  G.f0.visible = G.f1.visible = G.roof.visible = true; G.f1.position.y = 0; G.roof.position.y = 0;
-  const hidden = []; floorMeshes.filter(m => m.userData.invisible).forEach(m => { hidden.push(m); m.parent.remove(m); });
-  labels.forEach(l => l.removeFromParent());
-  root.scale.setScalar(0.3048);
-  const buf = await new GLTFExporter().parseAsync(root, {binary:true, onlyVisible:true});
-  root.scale.setScalar(1);
-  hidden.forEach(m => GD.add(m)); labels.forEach(l => (l.userData.parent || GD).add(l));
-  Object.assign(G.f0, {visible:was.f0}); G.f1.visible = was.f1; G.roof.visible = was.roof; G.f1.position.y = was.y1; G.roof.position.y = was.yr;
-  return buf;
-}
-labels.forEach(l => l.userData.parent = l.parent);
-window.__exportGLB = exportGLB;
-document.getElementById('glb').onclick = async () => {
-  const buf = await exportGLB(); const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([buf], {type:'model/gltf-binary'})); a.download = '604-tennyson-ave.glb'; a.click();
-};
-setView('all');
-window.__api = {setView, select:id => select(ROOMS.find(r => r.id === id), true), camera, orbit, G, home:() => { camera.position.copy(HOME.pos); orbit.target.copy(HOME.tgt); }};
-
-// ---------- loop ----------
-const clock = new THREE.Clock();
-function loop() {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  if (fly) { const k = Math.min(1, (performance.now()-fly.t0)/900), e = k<.5 ? 2*k*k : 1-(-2*k+2)**2/2;
-    camera.position.lerpVectors(fly.p0, fly.p1, e); orbit.target.lerpVectors(fly.q0, fly.q1, e); if (k >= 1) fly = null; }
-  if (walking) { const sp = 11*dt; if (keys.KeyW) plc.moveForward(sp); if (keys.KeyS) plc.moveForward(-sp); if (keys.KeyD) plc.moveRight(sp); if (keys.KeyA) plc.moveRight(-sp); camera.position.y = walkFloor ? 15.5 : 5.5; }
-  else orbit.update();
-  renderer.render(scene, camera); css.render(scene, camera);
-  requestAnimationFrame(loop);
-}
-loop();
-addEventListener('resize', () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); css.setSize(innerWidth, innerHeight); });
-window.__ready = true;
-</script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

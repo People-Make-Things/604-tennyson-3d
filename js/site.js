@@ -1,0 +1,249 @@
+// Lot, streets, fence, garden, trees and neighbouring houses.
+import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { texture, uv, color, vec3, float, mix, hash, instanceIndex, positionWorld, mx_noise_float, normalWorld, max, dot } from 'three/tsl';
+
+export const GY = -1.6;   // ground level relative to the ground floor
+
+export function buildSite(B) {
+  const G = 'garden';
+  // ground: one big lawn, with streets, sidewalks, curbs and parkways laid on top
+  B.box(G, 'grass', -600, -600, 700, 700, GY - 0.4, GY);
+  const road = (x0, z0, x1, z1, y = 0.02) => B.box(G, 'asphalt', x0, z0, x1, z1, GY - 0.2, GY - 0.45 + y);
+  road(-600, -74, 700, -42); road(-82, -600, -50, 700, 0.015);
+  const curbH = 0.45;
+  const strip = (key, x0, z0, x1, z1, y0, y1) => B.box(G, key, x0, z0, x1, z1, GY + y0, GY + y1);
+  // Tennyson: curbs, parkway, sidewalk on both sides
+  for (const s of [1, -1]) {
+    const zc = s > 0 ? -42 : -74, d = s;
+    strip('curb', -600, zc - 0.5 * d > zc ? zc : zc - 0.5, 700, zc + (d > 0 ? 0.5 : 0), -0.45, curbH - 0.45 + 0.01);
+    strip('concrete', -600, d > 0 ? -38 : -82.5, 700, d > 0 ? -33.5 : -78, 0, 0.06);
+  }
+  for (const s of [1, -1]) {
+    const xc = s > 0 ? -50 : -82;
+    strip('curb', s > 0 ? -50 : -82.5, -600, s > 0 ? -49.5 : -82, 700, -0.45, curbH - 0.45 + 0.012);
+    strip('concrete', s > 0 ? -46 : -90.5, -600, s > 0 ? -41.5 : -86, 700, 0, 0.065);
+  }
+  // front walk: exposed aggregate with brick borders, from the gate to the steps
+  strip('aggregate', 22.9, -33.5, 26.1, -3.1, 0, 0.08);
+  strip('brick', 22.5, -33.5, 22.9, -3.1, 0, 0.09); strip('brick', 26.1, -33.5, 26.5, -3.1, 0, 0.09);
+  // driveway (side is a guess, see README) with a curb cut
+  strip('concrete', 64, -42, 74, 40, 0, 0.07);
+  // planting beds along the front and sides of the house
+  const bed = (x0, z0, x1, z1) => strip('mulch', x0, z0, x1, z1, 0, 0.05);
+  bed(-6, -7, 22.5, 0); bed(26.5, -7, 63, 8.6); bed(-6, 0, 0, 48); bed(61.4, 8, 64, 52); bed(-41, -33, -20, -26); bed(30, -33, 64, -29);
+  // back terraces (three brick levels) and curved brick paths
+  for (let k = 0; k < 3; k++) strip(k === 2 ? 'grass' : 'brick', -10, 98 + k * 2.6, 44, 118, 0.05, 0.6 * (k + 1));
+  for (let k = 0; k < 3; k++) strip('brick', -10 + 0, 98 + k * 2.6 - 0.05, 44, 98 + k * 2.6 + 0.35, 0.6 * (k + 1) - 0.08, 0.6 * (k + 1) + 0.02);
+  const path = (p, w) => {
+    const pt = t => [0, 1].map(i => (1 - t) ** 3 * p[0][i] + 3 * (1 - t) ** 2 * t * p[1][i] + 3 * (1 - t) * t * t * p[2][i] + t ** 3 * p[3][i]);
+    for (let t = 0; t < 1; t += 0.01) {
+      const a = pt(t), b = pt(t + 0.01);
+      B.obox(G, 'brick', (a[0] + b[0]) / 2, GY + 0.04, (a[1] + b[1]) / 2, w, 0.1, Math.hypot(b[0] - a[0], b[1] - a[1]) + 0.08, Math.atan2(b[0] - a[0], b[1] - a[1]));
+    }
+  };
+  path([[54, 52], [54, 72], [30, 74], [30, 98]], 3.2); path([[9, 62], [4, 76], [24, 84], [20, 98]], 2.6);
+  // brick patio under the pergola
+  strip('brick', 0, 48.6, 18.4, 62, 0, 0.1);
+  // pergola behind the kitchen
+  [0.6, 9.2, 17.8].forEach(x => [49.4, 55.5, 61.6].forEach(z => B.box(G, 'pergola', x - 0.3, z - 0.3, x + 0.3, z + 0.3, GY, 8.6)));
+  [0.6, 9.2, 17.8].forEach(x => B.box(G, 'pergola', x - 0.22, 48.4, x + 0.22, 62.6, 8.6, 9.5));
+  for (let z = 48.8; z <= 62.4; z += 1.4) B.box(G, 'pergola', -0.8, z - 0.1, 19.2, z + 0.1, 9.5, 9.85);
+  // EV charger
+  B.box(G, 'sash', 72, 40, 72.8, 40.6, GY, 3.6); B.box(G, 'darkMetal', 72.1, 39.95, 72.7, 40.0, 2, 3.3);
+}
+
+// White picket fence along Tennyson, drawn as one instanced mesh.
+export function buildFence(group, mats) {
+  const xs = [];
+  for (let x = -41.2; x < 64; x += 0.62) if (x < 22.3 || x > 26.7) xs.push(x);
+  const geo = new THREE.BoxGeometry(0.3, 3.3, 0.07);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0) pos.setY(i, pos.getY(i) + (Math.abs(pos.getX(i)) < 0.01 ? 0.2 : 0));
+  const top = new THREE.ConeGeometry(0.212, 0.3, 4, 1); top.rotateY(Math.PI / 4); top.scale(1, 1, 0.33); top.translate(0, 1.8, 0);
+  const merged = mergeGeos([geo, top]);
+  const im = new THREE.InstancedMesh(merged, mats.picket, xs.length);
+  const m = new THREE.Matrix4();
+  xs.forEach((x, i) => { m.makeTranslation(x, GY + 1.65, -33.1); im.setMatrixAt(i, m); });
+  im.castShadow = im.receiveShadow = true; im.name = 'Picket fence';
+  group.add(im);
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(1, 0.28, 0.12), mats.picket);
+  for (const [a, b] of [[-41.3, 22.3], [26.7, 64]]) for (const y of [0.8, 2.5]) {
+    const r = rail.clone(); r.scale.x = b - a; r.position.set((a + b) / 2, GY + y, -33.0); r.castShadow = r.receiveShadow = true; group.add(r);
+  }
+  // gate, standing open, as in the listing photo
+  const gate = new THREE.Group();
+  for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(merged, mats.picket); p.position.set(k * 0.62 + 0.3, 1.65, 0); p.castShadow = true; gate.add(p); }
+  gate.position.set(26.6, GY, -33.1); gate.rotation.y = -1.9; group.add(gate);
+}
+
+function mergeGeos(list) {
+  const out = new THREE.BufferGeometry();
+  const P = [], N = [], U = [];
+  for (const g0 of list) { const g = g0.index ? g0.toNonIndexed() : g0; P.push(...g.attributes.position.array); N.push(...g.attributes.normal.array); U.push(...g.attributes.uv.array); }
+  out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  out.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+  out.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+  return out;
+}
+
+// ---------- trees ----------
+const TREES = [
+  // [model, x, z, height ft, rotation]
+  ['redwood_a', -16, 104, 112], ['redwood_b', -4, 114, 104], ['redwood_a', 56, 110, 118], ['redwood_b', 38, 128, 96],
+  ['redwood_b', 34, 74, 98],                      // the tall redwood seen above the roof in the listing photo
+  ['cedar', 84, -16, 70], ['cedar', 96, 30, 58],   // deodar cedars at the east corner
+  ['oak', -24, -6, 52], ['oak', -26, 66, 48], ['oak_m', 80, 86, 44], ['oak', 120, -110, 56], ['oak', -130, -120, 50],
+  ['maple_red', 40, -16, 19], ['maple_red', 50, -9, 16], ['maple_red', 8, -18, 17],
+  ['maple_gold', 19.5, -12, 27],
+  ['oak_m', -24, -40, 34], ['oak_m', 112, -40, 38],
+  ['cedar', -110, 160, 64], ['redwood_a', 150, 120, 104], ['oak', 180, 10, 50], ['oak_m', -150, 60, 40],
+];
+const BUSHES = [];
+(() => {
+  let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const along = (x0, z0, x1, z1, n, h0, h1) => { for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; BUSHES.push([['bush_a', 'bush_b', 'bush_c'][Math.floor(r() * 3)], x0 + (x1 - x0) * t + (r() - 0.5) * 1.5, z0 + (z1 - z0) * t + (r() - 0.5) * 1.2, h0 + r() * (h1 - h0), r() * 6.28]); } };
+  along(-4, -4, 21, -4, 7, 3, 5.5); along(28, -4, 62, -2, 9, 3, 5);
+  along(-3, 2, -3, 46, 10, 4, 7); along(63, 10, 63, 50, 8, 4, 7);
+  along(-38, -30, -22, -30, 4, 3, 4.5); along(32, -31, 62, -31, 6, 2.5, 4);
+  along(-40, 0, -40, 120, 16, 6, 10);       // hedge along Webster
+  along(78, -20, 78, 130, 18, 7, 11);       // hedge along the east lot line
+  along(-12, 96, 46, 96, 10, 2.5, 4);       // ivy-covered bank at the terraces
+  along(-38, 120, 80, 132, 16, 8, 12);      // back lot line
+})();
+
+export async function loadTrees(group, onProgress) {
+  const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+  const tl = new THREE.TextureLoader();
+  const ltex = n => { const t = tl.load('assets/trees/' + n); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  const btex = n => { const t = tl.load('assets/trees/' + n); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  const leafTex = { ash: ltex('leaf_ash.webp'), aspen: ltex('leaf_aspen.webp'), oak: ltex('leaf_oak.webp'), pine: ltex('leaf_pine.webp') };
+  const bark = { oak: [btex('bark_oak_diff.webp'), btex('bark_oak_nor.webp')], pine: [btex('bark_pine_diff.webp'), btex('bark_pine_nor.webp')] };
+  bark.oak[0].colorSpace = bark.pine[0].colorSpace = THREE.SRGBColorSpace;
+  const want = [...new Set([...TREES, ...BUSHES].map(t => t[0]))];
+  const models = {};
+  await Promise.all(want.map(async n => { models[n] = (await loader.loadAsync('assets/trees/' + n + '.glb')).scene; onProgress && onProgress(n); }));
+  const all = [...TREES.map(t => ({ n: t[0], x: t[1], z: t[2], h: t[3], r: (t[1] * 7.3 + t[2] * 3.1) % 6.28 })), ...BUSHES.map(b => ({ n: b[0], x: b[1], z: b[2], h: b[3], r: b[4] }))];
+  for (const n of want) {
+    const list = all.filter(t => t.n === n);
+    const root = models[n];
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const H = box.max.y - box.min.y;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      const isLeaf = o.name.includes('leaves') || (o.material && o.material.name.startsWith('leaf'));
+      const src = o.material;
+      let mat;
+      if (isLeaf) {
+        const type = (src.name.split('_')[1]) || 'oak';
+        mat = new THREE.MeshStandardNodeMaterial({ map: leafTex[type] || leafTex.oak, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.75, metalness: 0 });
+        const tint = src.color.clone();
+        // per-instance color variation and a faint transmitted-light lift so canopies are not flat
+        const v = hash(instanceIndex.add(7)).mul(0.25).add(0.87);
+        const tx = texture(mat.map, uv());
+        const autumn = tint.r > tint.g * 1.15;
+        const lum = dot(tx.rgb, vec3(0.3, 0.59, 0.11));
+        const base = autumn ? vec3(lum).mul(2.1).mul(color(tint)) : tx.rgb.mul(color(tint));
+        mat.colorNode = base.mul(v);
+        mat.opacityNode = tx.a;
+        mat.emissiveNode = base.mul(0.03);
+      } else {
+        const t = src.name.includes('pine') ? bark.pine : bark.oak;
+        mat = new THREE.MeshStandardNodeMaterial({ map: t[0], normalMap: t[1], color: src.color, roughness: 0.95, metalness: 0 });
+      }
+      const im = new THREE.InstancedMesh(o.geometry, mat, list.length);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
+      list.forEach((t, i) => {
+        const k = t.h / H;
+        q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.r);
+        s.set(k, k, k); p.set(t.x, GY - box.min.y * k - 0.2, t.z);
+        m.compose(p, q, s).multiply(o.matrixWorld);
+        im.setMatrixAt(i, m);
+      });
+      im.castShadow = true; im.receiveShadow = true; im.name = n + (isLeaf ? ' leaves' : ' branches');
+      im.frustumCulled = false;
+      group.add(im);
+    });
+  }
+}
+
+// ---------- neighbours (City of Palo Alto outlines via OSM) ----------
+export async function buildNeighbors(group, mats, nmats) {
+  const data = await (await fetch('js/neighbors.json')).json();
+  const roofMat = mats.shingles;
+  let s = 3; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const winM = [], trimM = [];
+  for (const nb of data) {
+    let poly = nb.p.map(([x, z]) => new THREE.Vector2(x, z));
+    if (THREE.ShapeUtils.isClockWise(poly)) poly = poly.reverse();
+    const area = Math.abs(THREE.ShapeUtils.area(poly));
+    if (area < 120) continue;
+    const small = area < 500;
+    const eave = small ? 8 : (rnd() < 0.45 ? 18 : 10);
+    // walls
+    const shape = new THREE.Shape(poly.map(p => new THREE.Vector2(p.x, -p.y)));
+    const wg = new THREE.ExtrudeGeometry(shape, { depth: eave - GY, bevelEnabled: false });
+    wg.rotateX(-Math.PI / 2); wg.translate(0, GY, 0);
+    const wm = new THREE.Mesh(wg, small ? mats.paintGrey : nmats[Math.floor(rnd() * nmats.length)]);
+    wm.castShadow = wm.receiveShadow = true; group.add(wm);
+    // hip roof from the distance to the outline (a straight-skeleton roof), with 1.5 ft overhang
+    const slope = small ? 0.35 : 0.5, rise = small ? 4 : 9;
+    const xs = poly.map(p => p.x), zs = poly.map(p => p.y);
+    const x0 = Math.min(...xs) - 1.6, x1 = Math.max(...xs) + 1.6, z0 = Math.min(...zs) - 1.6, z1 = Math.max(...zs) + 1.6;
+    const step = 0.6;
+    const nx = Math.ceil((x1 - x0) / step), nz = Math.ceil((z1 - z0) / step);
+    const sd = (x, z) => {
+      let d = Infinity, inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const a = poly[i], b = poly[j];
+        if (((a.y > z) !== (b.y > z)) && (x < (b.x - a.x) * (z - a.y) / (b.y - a.y) + a.x)) inside = !inside;
+        const vx = b.x - a.x, vz = b.y - a.y, t = Math.max(0, Math.min(1, ((x - a.x) * vx + (z - a.y) * vz) / (vx * vx + vz * vz)));
+        d = Math.min(d, Math.hypot(x - a.x - t * vx, z - a.y - t * vz));
+      }
+      return inside ? d : -d;
+    };
+    const Hs = [];
+    for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const d = sd(x0 + i * step, z0 + j * step); Hs.push(d); }
+    const P = [], N = [];
+    const h = (i, j) => eave + Math.min(rise, slope * Hs[j * (nx + 1) + i]);
+    const pushTri = (a, b, c) => { const u = new THREE.Vector3().subVectors(b, a), v = new THREE.Vector3().subVectors(c, a); const n = u.cross(v).normalize(); for (const p of [a, b, c]) { P.push(p.x, p.y, p.z); N.push(n.x, n.y, n.z); } };
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      const dc = sd(x0 + (i + 0.5) * step, z0 + (j + 0.5) * step);
+      if (dc < -1.4) continue;
+      const V = (ii, jj) => new THREE.Vector3(x0 + ii * step, h(ii, jj), z0 + jj * step);
+      const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), d = V(i, j + 1);
+      pushTri(a, d, c); pushTri(a, c, b);
+    }
+    const rg = new THREE.BufferGeometry();
+    rg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    rg.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+    rg.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(P.length / 3 * 2), 2));
+    const rm = new THREE.Mesh(rg, roofMat); rm.castShadow = rm.receiveShadow = true; group.add(rm);
+    // windows along the longer walls
+    if (!small) for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[j], b = poly[i]; const L = a.distanceTo(b); if (L < 9) continue;
+      const n = Math.floor(L / 9); const ang = Math.atan2(b.x - a.x, b.y - a.y);
+      const ox = (b.y - a.y) / L, oz = -(b.x - a.x) / L; // outward for counter-clockwise polygon in x/z after reversal
+      for (let k = 0; k < n; k++) {
+        const t = (k + 0.5) / n, cx = a.x + (b.x - a.x) * t, cz = a.y + (b.y - a.y) * t;
+        for (const fy of eave > 12 ? [4.6, 13.5] : [4.6]) {
+          const w = new THREE.Mesh(winGeo, mats.glassDark); w.position.set(cx - ox * 0.0, fy, cz - oz * 0.0); w.rotation.y = ang + Math.PI / 2;
+          const tr = new THREE.Mesh(winTrim, mats.sash); tr.position.copy(w.position); tr.rotation.copy(w.rotation);
+          w.position.x += ox * 0.06; w.position.z += oz * 0.06; tr.position.x += ox * 0.03; tr.position.z += oz * 0.03;
+          w.position.x -= ox * 0.12; w.position.z -= oz * 0.12; tr.position.x -= ox * 0.12; tr.position.z -= oz * 0.12;
+          w.updateMatrix(); tr.updateMatrix(); winM.push(w.matrix.clone()); trimM.push(tr.matrix.clone());
+        }
+      }
+    }
+  }
+  addInstances(group, winGeo, mats.glassDark, winM); addInstances(group, winTrim, mats.sash, trimM);
+}
+const winGeo = new THREE.BoxGeometry(3, 4.2, 0.3);
+function addInstances(group, geo, mat, list) {
+  const im = new THREE.InstancedMesh(geo, mat, list.length);
+  list.forEach((m, i) => im.setMatrixAt(i, m));
+  im.castShadow = false; im.receiveShadow = true; group.add(im);
+}
+const winTrim = new THREE.BoxGeometry(3.6, 4.8, 0.24);
